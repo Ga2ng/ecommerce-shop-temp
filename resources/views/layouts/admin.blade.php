@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>@yield('title', 'Admin Dashboard') - {{ config('app.name', 'Shop') }}</title>
+        <title>@yield('title', 'Admin Dashboard') - {{ config('app.name', 'E-comm') }}</title>
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
@@ -26,7 +26,7 @@
                         </div>
                         <div>
                             <h1 class="text-xl font-bold text-black dark:text-white">Admin Panel</h1>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ config('app.name', 'Shop') }}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ config('app.name', 'E-comm') }}</p>
                         </div>
                     </a>
                 </div>

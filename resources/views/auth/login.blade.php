@@ -27,14 +27,14 @@
         <!-- Remember Me -->
         <div class="block mt-4">
             <label for="remember_me" class="inline-flex items-center">
-                <input id="remember_me" type="checkbox" class="rounded dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-emerald-custom shadow-sm focus:ring-emerald-custom dark:focus:ring-emerald-custom dark:focus:ring-offset-gray-800" name="remember">
+                <input id="remember_me" type="checkbox" class="rounded dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-emerald-custom shadow-sm focus:ring-emerald-custom dark:focus:ring-emerald-custom dark:focus:ring-offset-gray-800" name="remember">
                 <span class="ms-2 text-sm text-gray-700 dark:text-gray-300">{{ __('Remember me') }}</span>
             </label>
         </div>
 
-        <div class="flex items-center justify-end mt-4">
+        <div class="flex items-center justify-between mt-6">
             @if (Route::has('password.request'))
-                <a class="underline text-sm text-gray-700 dark:text-gray-300 hover:text-emerald-custom dark:hover:text-emerald-custom rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-custom dark:focus:ring-offset-gray-800 transition-colors" href="{{ route('password.request') }}">
+                <a class="text-sm text-gray-700 dark:text-gray-300 hover:text-emerald-custom dark:hover:text-emerald-custom rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-custom dark:focus:ring-offset-gray-800 transition-colors" href="{{ route('password.request') }}">
                     {{ __('Forgot your password?') }}
                 </a>
             @endif
@@ -43,5 +43,16 @@
                 {{ __('Log in') }}
             </x-primary-button>
         </div>
+
+        @if (Route::has('register'))
+            <div class="mt-6 text-center">
+                <p class="text-sm text-gray-600 dark:text-gray-400">
+                    Don't have an account? 
+                    <a href="{{ route('register') }}" class="font-medium text-emerald-custom hover:text-[#0ea572] transition-colors">
+                        Register here
+                    </a>
+                </p>
+            </div>
+        @endif
     </form>
 </x-guest-layout>

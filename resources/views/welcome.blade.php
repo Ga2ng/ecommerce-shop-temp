@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>{{ config('app.name', 'Ecommerce Shop') }}</title>
+        <title>{{ config('app.name', 'E-comm') }}</title>
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
@@ -18,8 +18,11 @@
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between items-center h-16">
                     <div class="flex items-center">
-                        <a href="/" class="text-2xl font-bold text-black dark:text-white">
-                            {{ config('app.name', 'Shop') }}
+                        <a href="/" class="flex items-center space-x-2">
+                            <div class="w-8 h-8 bg-emerald-custom rounded-lg flex items-center justify-center">
+                                <span class="text-white font-bold text-sm">E</span>
+                            </div>
+                            <span class="text-2xl font-bold text-black dark:text-white">E-comm</span>
                         </a>
                     </div>
                     <div class="flex items-center gap-4">
@@ -249,7 +252,7 @@
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <div>
-                        <h3 class="text-xl font-bold mb-4">{{ config('app.name', 'Shop') }}</h3>
+                        <h3 class="text-xl font-bold mb-4">{{ config('app.name', 'E-comm') }}</h3>
                         <p class="text-gray-400">
                             Platform ecommerce untuk UMKM dengan produk merchandise berkualitas tinggi.
                         </p>
@@ -266,14 +269,14 @@
                     <div>
                         <h4 class="font-semibold mb-4">Kontak</h4>
                         <ul class="space-y-2 text-gray-400">
-                            <li>Email: info@shop.com</li>
+                            <li>Email: info@e-comm.com</li>
                             <li>Telp: +62 123 456 789</li>
                             <li>Alamat: Jakarta, Indonesia</li>
                     </ul>
                     </div>
                 </div>
                 <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-                    <p>&copy; {{ date('Y') }} {{ config('app.name', 'Shop') }}. All rights reserved.</p>
+                    <p>&copy; {{ date('Y') }} {{ config('app.name', 'E-comm') }}. All rights reserved.</p>
                 </div>
         </div>
         </footer>

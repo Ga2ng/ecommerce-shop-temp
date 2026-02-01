@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>@yield('title', 'Product Catalog') - {{ config('app.name', 'Shop') }}</title>
+        <title>@yield('title', 'Product Catalog') - {{ config('app.name', 'E-comm') }}</title>
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
@@ -22,9 +22,9 @@
                     <!-- Logo -->
                     <a href="/" class="flex items-center space-x-2 group">
                         <div class="w-8 h-8 bg-emerald-custom rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                            <span class="text-white font-bold text-sm">S</span>
+                            <span class="text-white font-bold text-sm">E</span>
                         </div>
-                        <span class="text-xl font-bold text-black dark:text-white">{{ config('app.name', 'Shop') }}</span>
+                        <span class="text-xl font-bold text-black dark:text-white">{{ config('app.name', 'E-comm') }}</span>
                     </a>
 
                     <!-- Desktop Navigation -->
@@ -146,9 +146,9 @@
                     <div>
                         <div class="flex items-center space-x-2 mb-4">
                             <div class="w-8 h-8 bg-emerald-custom rounded-lg flex items-center justify-center">
-                                <span class="text-white font-bold text-sm">S</span>
+                                <span class="text-white font-bold text-sm">E</span>
                             </div>
-                            <span class="text-xl font-bold">{{ config('app.name', 'Shop') }}</span>
+                            <span class="text-xl font-bold">{{ config('app.name', 'E-comm') }}</span>
                         </div>
                         <p class="text-gray-400 text-sm">
                             Quality merchandise for your business needs.
@@ -166,14 +166,14 @@
                     <div>
                         <h4 class="font-semibold mb-4 text-sm uppercase tracking-wider">Contact</h4>
                         <ul class="space-y-2 text-sm text-gray-400">
-                            <li>info@shop.com</li>
+                            <li>info@e-comm.com</li>
                             <li>+62 123 456 789</li>
                             <li>Jakarta, Indonesia</li>
                         </ul>
                     </div>
                 </div>
                 <div class="border-t border-gray-800 mt-8 pt-8 text-center">
-                    <p class="text-sm text-gray-500">&copy; {{ date('Y') }} {{ config('app.name', 'Shop') }}. All rights reserved.</p>
+                    <p class="text-sm text-gray-500">&copy; {{ date('Y') }} {{ config('app.name', 'E-comm') }}. All rights reserved.</p>
                 </div>
             </div>
         </footer>
