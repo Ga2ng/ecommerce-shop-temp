@@ -1,0 +1,68 @@
+@extends('layouts.admin')
+
+@section('title', 'Edit News')
+@section('page-title', 'Edit News')
+
+@section('content')
+<div class="max-w-4xl">
+    <form action="{{ route('admin.news.update', $news) }}" method="POST" enctype="multipart/form-data" class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-6">
+        @csrf
+        @method('PUT')
+
+        <div class="space-y-6">
+            <!-- Title -->
+            <div>
+                <label for="title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Title *</label>
+                <input type="text" name="title" id="title" value="{{ old('title', $news->title) }}" required class="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-custom focus:border-transparent">
+                @error('title')
+                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <!-- Content -->
+            <div>
+                <label for="content" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Content *</label>
+                <textarea name="content" id="content" rows="10" required class="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-custom focus:border-transparent">{{ old('content', $news->content) }}</textarea>
+                @error('content')
+                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <!-- Current Image -->
+            @if($news->image)
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Current Image</label>
+                    <img src="{{ asset('storage/' . $news->image) }}" alt="{{ $news->title }}" class="w-64 h-48 object-cover rounded-lg border border-gray-200 dark:border-gray-800">
+                </div>
+            @endif
+
+            <!-- Image -->
+            <div>
+                <label for="image" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Featured Image {{ $news->image ? '(Leave empty to keep current)' : '' }}</label>
+                <input type="file" name="image" id="image" accept="image/*" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-custom focus:border-transparent">
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Maximum file size: 10MB</p>
+                @error('image')
+                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <!-- Is Published -->
+            <div class="flex items-center">
+                <input type="checkbox" name="is_published" id="is_published" value="1" {{ old('is_published', $news->is_published) ? 'checked' : '' }} class="w-4 h-4 text-emerald-custom border-gray-300 rounded focus:ring-emerald-custom">
+                <label for="is_published" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Publish this news</label>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-gray-800">
+                <a href="{{ route('admin.news.index') }}" class="px-4 py-2 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                    Cancel
+                </a>
+                <button type="submit" class="px-6 py-2 bg-emerald-custom text-white font-semibold rounded-lg hover:bg-[#0ea572] transition-colors">
+                    Update News
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+@endsection
+

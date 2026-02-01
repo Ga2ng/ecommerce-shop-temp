@@ -14,6 +14,11 @@ export default {
             fontFamily: {
                 sans: ['Figtree', ...defaultTheme.fontFamily.sans],
             },
+            colors: {
+                emerald: {
+                    custom: '#10B981',
+                },
+            },
         },
     },
 
