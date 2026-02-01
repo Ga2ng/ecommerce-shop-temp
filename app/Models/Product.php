@@ -20,6 +20,7 @@ class Product extends Model
         'description',
         'price',
         'stock',
+        'reserved_stock',
         'category',
         'image',
         'is_active',
@@ -35,6 +36,7 @@ class Product extends Model
         return [
             'price' => 'decimal:2',
             'stock' => 'integer',
+            'reserved_stock' => 'integer',
             'is_active' => 'boolean',
         ];
     }
@@ -64,6 +66,52 @@ class Product extends Model
             $q->where('name', 'like', "%{$search}%")
               ->orWhere('description', 'like', "%{$search}%");
         });
+    }
+
+    /**
+     * Get available stock (stock - reserved_stock)
+     */
+    public function getAvailableStockAttribute(): int
+    {
+        return max(0, $this->stock - $this->reserved_stock);
+    }
+
+    /**
+     * Check if product has available stock
+     */
+    public function hasStock(int $quantity = 1): bool
+    {
+        return $this->available_stock >= $quantity;
+    }
+
+    /**
+     * Reserve stock
+     */
+    public function reserveStock(int $quantity): bool
+    {
+        if (!$this->hasStock($quantity)) {
+            return false;
+        }
+        
+        $this->increment('reserved_stock', $quantity);
+        return true;
+    }
+
+    /**
+     * Release reserved stock
+     */
+    public function releaseStock(int $quantity): void
+    {
+        $this->decrement('reserved_stock', max(0, min($quantity, $this->reserved_stock)));
+    }
+
+    /**
+     * Confirm reserved stock (move to actual stock reduction)
+     */
+    public function confirmReservedStock(int $quantity): void
+    {
+        $this->decrement('stock', $quantity);
+        $this->decrement('reserved_stock', $quantity);
     }
 }
 

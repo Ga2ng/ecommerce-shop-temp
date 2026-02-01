@@ -35,4 +35,20 @@ return [
         ],
     ],
 
+    'midtrans' => [
+        'server_key' => env('MIDTRANS_SERVER_KEY'),
+        'client_key' => env('MIDTRANS_CLIENT_KEY'),
+        'merchant_id' => env('MIDTRANS_MERCHANT_ID'),
+        'is_production' => env('MIDTRANS_IS_PRODUCTION', false),
+        'is_sanitized' => env('MIDTRANS_IS_SANITIZED', true),
+        'is_3ds' => env('MIDTRANS_IS_3DS', true),
+    ],
+
+    'rajaongkir' => [
+        'api_key' => env('RAJAONGKIR_API_KEY'),
+        'account_type' => env('RAJAONGKIR_ACCOUNT_TYPE', 'starter'), // starter, basic, pro
+        'origin_city_id' => env('RAJAONGKIR_ORIGIN_CITY_ID', '444'), // City ID untuk origin toko (Surabaya)
+        'komerce_base_url' => env('RAJAONGKIR_KOMERCE_BASE_URL', 'https://rajaongkir.komerce.id/api/v1'),
+    ],
+
 ];

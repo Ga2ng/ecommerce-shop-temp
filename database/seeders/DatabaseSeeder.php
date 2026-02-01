@@ -31,9 +31,10 @@ class DatabaseSeeder extends Seeder
             'role' => 'user',
         ]);
 
-        // Seed products
+        // Seed products and news
         $this->call([
             ProductSeeder::class,
+            NewsSeeder::class,
         ]);
     }
 }
