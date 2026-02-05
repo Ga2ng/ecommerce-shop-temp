@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\TransactionRecord;
 use App\Services\PaymentService;
+use App\Services\TransactionMailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -90,26 +92,17 @@ class PaymentController extends Controller
             $productPrice = $product->price;
             $subtotal = $productPrice * $validated['quantity'];
             
-            // VALIDATE: Ensure RajaOngkir city ID is provided
-            if (empty($validated['rajaongkir_city_id'])) {
-                DB::rollBack();
-                return back()->withErrors([
-                    'city_id' => 'Kota tidak valid untuk perhitungan ongkir. Silakan pilih kota kembali.'
-                ])->withInput();
-            }
-
-            // VALIDATE: Recalculate shipping cost from RajaOngkir API (CRITICAL - ignore frontend value)
+            // VALIDATE: Recalculate shipping cost from Komerce district domestic-cost API
             $shippingService = app(\App\Services\ShippingService::class);
-            $originCityId = config('services.rajaongkir.origin_city_id', 444); // Surabaya
-            $weight = 1000; // Default 1kg, bisa diambil dari product atau input
-            $shippingResult = $shippingService->getCost(
-                $originCityId,
-                (int) $validated['rajaongkir_city_id'],
+            $originDistrictId = (int) config('services.rajaongkir.origin_district_id', 1391);
+            $weight = 1000;
+            $shippingResult = $shippingService->getCostDistrict(
+                $originDistrictId,
+                (int) $validated['district_id'],
                 $weight,
                 $validated['shipping_courier']
             );
-            
-            // Validate shipping cost from API - MUST come from API
+
             $shippingCost = 0;
             if (!$shippingResult['success']) {
                 DB::rollBack();
@@ -117,41 +110,23 @@ class PaymentController extends Controller
                     'shipping_courier' => 'Gagal menghitung ongkir: ' . ($shippingResult['message'] ?? 'Unknown error')
                 ])->withInput();
             }
-            
-            // Find matching service cost
+
+            $serviceFound = false;
             if (isset($shippingResult['data'][0]['costs'])) {
-                $serviceFound = false;
                 foreach ($shippingResult['data'][0]['costs'] as $cost) {
-                    if ($cost['service'] === $validated['shipping_service']) {
-                        $shippingCost = $cost['cost'][0]['value'] ?? 0;
+                    if (($cost['service'] ?? '') === $validated['shipping_service']) {
+                        $firstCost = $cost['cost'][0] ?? null;
+                        $shippingCost = is_array($firstCost) ? (int) ($firstCost['value'] ?? $firstCost['price'] ?? 0) : (int) $firstCost;
                         $serviceFound = true;
                         break;
                     }
                 }
-                
-                if (!$serviceFound) {
-                    DB::rollBack();
-                    return back()->withErrors([
-                        'shipping_service' => 'Layanan pengiriman tidak ditemukan.'
-                    ])->withInput();
-                }
-            } else {
+            }
+            if (!$serviceFound) {
                 DB::rollBack();
                 return back()->withErrors([
-                    'shipping_courier' => 'Tidak ada layanan pengiriman tersedia untuk kurir ini.'
+                    'shipping_service' => 'Layanan pengiriman tidak ditemukan.'
                 ])->withInput();
-            }
-            
-            // Validate shipping cost matches (with tolerance 10%)
-            $submittedCost = $validated['shipping_cost'] ?? 0;
-            $tolerance = $shippingCost * 0.1; // 10% tolerance
-            if (abs($submittedCost - $shippingCost) > $tolerance) {
-                // Log warning but use API cost
-                Log::warning('Shipping cost mismatch', [
-                    'submitted' => $submittedCost,
-                    'api' => $shippingCost,
-                    'order_id' => null,
-                ]);
             }
             
             $total = $subtotal + $shippingCost;
@@ -201,7 +176,7 @@ class PaymentController extends Controller
 
             // Create order (guest checkout allowed)
             $order = Order::create([
-                'user_id' => Auth::check() ? Auth::id() : null, // Allow guest checkout
+                'user_id' => Auth::check() ? Auth::id() : null,
                 'status' => 'pending_payment',
                 'customer_name' => $validated['customer_name'],
                 'customer_email' => $validated['customer_email'],
@@ -209,7 +184,8 @@ class PaymentController extends Controller
                 'shipping_address' => $validated['shipping_address'],
                 'shipping_city' => $city['name'] ?? null,
                 'shipping_province' => $province['name'] ?? null,
-                'shipping_postal_code' => $validated['shipping_postal_code'] ?? ($city['zip_code'] ?? null),
+                'shipping_district' => $district['name'] ?? null,
+                'shipping_postal_code' => $validated['shipping_postal_code'] ?? ($district['zip_code'] ?? $city['zip_code'] ?? null),
                 'rajaongkir_city_id' => $validated['rajaongkir_city_id'],
                 'shipping_courier' => $validated['shipping_courier'],
                 'shipping_service' => $validated['shipping_service'],
@@ -292,7 +268,9 @@ class PaymentController extends Controller
     }
 
     /**
-     * Handle payment success (return URL from Midtrans)
+     * Handle payment success (return URL from Midtrans).
+     * Sinkronkan status dengan Midtrans di sini agar jika webhook tidak jalan
+     * (localhost / URL notifikasi belum di-set), order tetap tercatat lunas dan stok berkurang.
      */
     public function success(Request $request, Order $order)
     {
@@ -302,7 +280,26 @@ class PaymentController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        // Note: Don't update order status here, wait for webhook
+        // Fallback: jika webhook belum/tidak terpanggil, cek status di Midtrans dan update order + stok + transaction_record
+        if ($order->status !== 'paid') {
+            $status = $this->paymentService->verifyTransaction($order->midtrans_order_id);
+            if ($status && in_array($status['transaction_status'] ?? '', ['settlement', 'capture'])) {
+                $order->markAsPaidFromPayload($status);
+                $order->refresh();
+            }
+        }
+
+        // Pastikan TransactionRecord ada (order sudah paid tapi record belum terisi, e.g. webhook lama / error)
+        if ($order->status === 'paid' && !$order->transactionRecord) {
+            $order->ensureTransactionRecord();
+        }
+
+        // Kirim email struk jika status masih pending (fallback bila webhook tidak jalan)
+        $order->load('transactionRecord');
+        if ($order->transactionRecord && $order->transactionRecord->email_status === TransactionRecord::EMAIL_STATUS_PENDING) {
+            app(TransactionMailService::class)->sendReceipt($order->transactionRecord);
+        }
+
         return view('payment.success', compact('order'));
     }
 

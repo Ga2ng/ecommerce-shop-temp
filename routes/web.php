@@ -59,6 +59,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     
     // News Management
     Route::resource('news', App\Http\Controllers\Admin\NewsController::class);
+
+    // Transaksi berhasil (dashboard analisis)
+    Route::get('transactions', [App\Http\Controllers\Admin\TransactionController::class, 'index'])->name('transactions.index');
+    Route::post('transactions/{transaction}/send-receipt', [App\Http\Controllers\Admin\TransactionReceiptController::class, 'send'])->name('transactions.send-receipt');
 });
 
 require __DIR__.'/auth.php';

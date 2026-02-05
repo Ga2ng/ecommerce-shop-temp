@@ -30,8 +30,14 @@ class RegionController extends Controller
             $cacheKey = 'rajaongkir_provinces';
             
             $provinces = Cache::remember($cacheKey, 86400, function () {
+                if (empty($this->apiKey)) {
+                    Log::warning('RajaOngkir API key not set (RAJAONGKIR_API_KEY)');
+                    return [];
+                }
+                // Komerce docs: header "Key: YOUR_API_KEY"
                 $response = Http::withHeaders([
-                    'key' => $this->apiKey,
+                    'Key' => $this->apiKey,
+                    'Accept' => 'application/json',
                 ])->get("{$this->baseUrl}/destination/province");
                 $data = $response->json();
                 
@@ -42,11 +48,21 @@ class RegionController extends Controller
                 ]);
                 
                 if ($response->successful() && isset($data['meta']['code']) && $data['meta']['code'] == 200) {
-                    return $data['data'] ?? [];
+                    $list = $data['data'] ?? [];
+                    // Jangan cache hasil kosong agar setelah API key di-set bisa dapat data
+                    return is_array($list) ? $list : [];
                 }
-                
+                Log::warning('RajaOngkir Provinces API non-200 or no data', [
+                    'status' => $response->status(),
+                    'body' => $data,
+                ]);
                 return [];
             });
+
+            // Jangan cache hasil kosong: hapus cache jika provinces kosong supaya request berikutnya coba lagi
+            if (empty($provinces)) {
+                Cache::forget($cacheKey);
+            }
             
             // Filter by search if provided
             if ($search) {
@@ -74,6 +90,7 @@ class RegionController extends Controller
 
     /**
      * Get cities by province from RajaOngkir Komerce.id
+     * API: GET https://rajaongkir.komerce.id/api/v1/destination/city/{province_id}
      */
     public function cities(Request $request, $provinceId)
     {
@@ -83,11 +100,14 @@ class RegionController extends Controller
             $cacheKey = "rajaongkir_cities_province_{$provinceId}";
             
             $cities = Cache::remember($cacheKey, 86400, function () use ($provinceId) {
+                if (empty($this->apiKey)) {
+                    return [];
+                }
+                // Komerce: GET /destination/city/{province_id} (path, bukan query)
                 $response = Http::withHeaders([
-                    'key' => $this->apiKey,
-                ])->get("{$this->baseUrl}/destination/city", [
-                    'province_id' => $provinceId
-                ]);
+                    'Key' => $this->apiKey,
+                    'Accept' => 'application/json',
+                ])->get("{$this->baseUrl}/destination/city/{$provinceId}");
                 $data = $response->json();
                 
                 Log::info('RajaOngkir Cities API Response', [
@@ -99,7 +119,8 @@ class RegionController extends Controller
                 ]);
                 
                 if ($response->successful() && isset($data['meta']['code']) && $data['meta']['code'] == 200) {
-                    return $data['data'] ?? [];
+                    $list = $data['data'] ?? [];
+                    return is_array($list) ? $list : [];
                 }
                 
                 Log::warning('RajaOngkir Cities API returned empty or error', [
@@ -110,6 +131,10 @@ class RegionController extends Controller
                 
                 return [];
             });
+
+            if (empty($cities)) {
+                Cache::forget($cacheKey);
+            }
             
             // Filter by search if provided
             if ($search) {
@@ -141,6 +166,7 @@ class RegionController extends Controller
 
     /**
      * Get districts by city from RajaOngkir Komerce.id
+     * API: GET https://rajaongkir.komerce.id/api/v1/destination/district/{city_id}
      */
     public function districts(Request $request, $cityId)
     {
@@ -150,19 +176,27 @@ class RegionController extends Controller
             $cacheKey = "rajaongkir_districts_city_{$cityId}";
             
             $districts = Cache::remember($cacheKey, 86400, function () use ($cityId) {
+                if (empty($this->apiKey)) {
+                    return [];
+                }
+                // Komerce: GET /destination/district/{city_id} (path, bukan query)
                 $response = Http::withHeaders([
-                    'key' => $this->apiKey,
-                ])->get("{$this->baseUrl}/destination/district", [
-                    'city_id' => $cityId
-                ]);
+                    'Key' => $this->apiKey,
+                    'Accept' => 'application/json',
+                ])->get("{$this->baseUrl}/destination/district/{$cityId}");
                 $data = $response->json();
                 
                 if ($response->successful() && isset($data['meta']['code']) && $data['meta']['code'] == 200) {
-                    return $data['data'] ?? [];
+                    $list = $data['data'] ?? [];
+                    return is_array($list) ? $list : [];
                 }
                 
                 return [];
             });
+
+            if (empty($districts)) {
+                Cache::forget($cacheKey);
+            }
             
             // Filter by search if provided
             if ($search) {

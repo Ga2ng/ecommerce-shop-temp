@@ -46,8 +46,11 @@ return [
 
     'rajaongkir' => [
         'api_key' => env('RAJAONGKIR_API_KEY'),
-        'account_type' => env('RAJAONGKIR_ACCOUNT_TYPE', 'starter'), // starter, basic, pro
-        'origin_city_id' => env('RAJAONGKIR_ORIGIN_CITY_ID', '444'), // City ID untuk origin toko (Surabaya)
+        'calculate_api_key' => env('RAJAONGKIR_CALCULATE_API_KEY', env('RAJAONGKIR_API_KEY')),
+        'account_type' => env('RAJAONGKIR_ACCOUNT_TYPE', 'starter'),
+        'origin_city_id' => env('RAJAONGKIR_ORIGIN_CITY_ID', '444'),
+        'origin_district_id' => env('RAJAONGKIR_ORIGIN_DISTRICT_ID', '1391'),
+        'origin_label' => env('RAJAONGKIR_ORIGIN_LABEL', 'Toko (DKI Jakarta)'),
         'komerce_base_url' => env('RAJAONGKIR_KOMERCE_BASE_URL', 'https://rajaongkir.komerce.id/api/v1'),
     ],
 

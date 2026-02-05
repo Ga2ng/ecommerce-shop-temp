@@ -9,16 +9,133 @@ use Illuminate\Support\Facades\Cache;
 class ShippingService
 {
     protected $apiKey;
+    protected $calculateApiKey;
     protected $baseUrl;
     protected $accountType;
+    protected $komerceBaseUrl;
 
     public function __construct()
     {
         $this->apiKey = config('services.rajaongkir.api_key');
-        $this->accountType = config('services.rajaongkir.account_type', 'starter'); // starter, basic, pro
-        $this->baseUrl = $this->accountType === 'pro' 
+        $this->calculateApiKey = config('services.rajaongkir.calculate_api_key', $this->apiKey);
+        $this->accountType = config('services.rajaongkir.account_type', 'starter');
+        $this->komerceBaseUrl = config('services.rajaongkir.komerce_base_url', 'https://rajaongkir.komerce.id/api/v1');
+        $this->baseUrl = $this->accountType === 'pro'
             ? 'https://pro.rajaongkir.com/api'
             : 'https://api.rajaongkir.com';
+    }
+
+    /**
+     * Get shipping cost via Komerce domestic-cost API
+     * POST .../calculate/domestic-cost
+     * origin & destination = IDs from Search Domestics Destinations; weight in grams; courier code; price = lowest|highest
+     * Response: data[] = { name, code, service, description, cost (int), etd (string) }
+     */
+    public function getCostDistrict(int $originDistrictId, int $destinationDistrictId, int $weight, string $courier): array
+    {
+        $allowed = ['jne', 'sicepat', 'ide', 'sap', 'jnt', 'ninja', 'tiki', 'lion', 'anteraja', 'pos', 'ncs', 'rex', 'rpx', 'sentral', 'star', 'wahana', 'dse'];
+        if (!in_array(strtolower($courier), $allowed)) {
+            return ['success' => false, 'message' => 'Kurir tidak didukung.'];
+        }
+        if ($weight < 1) {
+            $weight = 1;
+        }
+
+        $cacheKey = "komerce_domestic_cost_{$originDistrictId}_{$destinationDistrictId}_{$weight}_{$courier}";
+        return Cache::remember($cacheKey, 3600, function () use ($originDistrictId, $destinationDistrictId, $weight, $courier) {
+            try {
+                if (empty($this->calculateApiKey)) {
+                    return ['success' => false, 'message' => 'API key calculate tidak di-set.'];
+                }
+                $response = Http::withHeaders([
+                    'key' => $this->calculateApiKey,
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/x-www-form-urlencoded',
+                ])->asForm()->post("{$this->komerceBaseUrl}/calculate/domestic-cost", [
+                    'origin' => $originDistrictId,
+                    'destination' => $destinationDistrictId,
+                    'weight' => $weight,
+                    'courier' => strtolower($courier),
+                    'price' => 'lowest',
+                ]);
+
+                $data = $response->json();
+                if (!$response->successful()) {
+                    Log::warning('Komerce domestic-cost API HTTP error', [
+                        'status' => $response->status(),
+                        'body' => $data,
+                    ]);
+                    return [
+                        'success' => false,
+                        'message' => $data['meta']['message'] ?? 'Gagal menghitung ongkir.',
+                    ];
+                }
+
+                $code = $data['meta']['code'] ?? null;
+                if ($code != 200) {
+                    return [
+                        'success' => false,
+                        'message' => $data['meta']['message'] ?? 'Gagal menghitung ongkir.',
+                    ];
+                }
+
+                $rawList = $data['data'] ?? [];
+                if (!is_array($rawList)) {
+                    return ['success' => false, 'message' => 'Format response tidak valid.'];
+                }
+
+                $results = $this->normalizeDomesticCostResponse($rawList, $courier);
+                if (empty($results)) {
+                    return [
+                        'success' => false,
+                        'message' => 'Tidak ada layanan pengiriman tersedia untuk kurir ini.',
+                    ];
+                }
+
+                return [
+                    'success' => true,
+                    'data' => $results,
+                ];
+            } catch (\Exception $e) {
+                Log::error('Komerce calculate Error: ' . $e->getMessage(), [
+                    'origin' => $originDistrictId,
+                    'destination' => $destinationDistrictId,
+                    'courier' => $courier,
+                ]);
+                return [
+                    'success' => false,
+                    'message' => 'Gagal menghubungi layanan ongkir. Silakan coba lagi.',
+                ];
+            }
+        });
+    }
+
+    /**
+     * Normalize domestic-cost API response to format expected by frontend
+     * API returns: data[] = { name, code, service, description, cost (int), etd (string) } per service
+     * We output: [ { code, name, costs: [ { service, cost: [ { value, etd } ] } ] } ] (grouped by courier)
+     */
+    private function normalizeDomesticCostResponse(array $rawList, string $requestedCourier): array
+    {
+        $byCourier = [];
+        foreach ($rawList as $item) {
+            $code = $item['code'] ?? strtolower($requestedCourier);
+            $name = $item['name'] ?? strtoupper($code);
+            $serviceName = $item['service'] ?? $item['name'] ?? 'Service';
+            $cost = isset($item['cost']) ? (int) $item['cost'] : 0;
+            $etd = $item['etd'] ?? '-';
+            if ($cost < 0) {
+                continue;
+            }
+            if (!isset($byCourier[$code])) {
+                $byCourier[$code] = ['code' => $code, 'name' => $name, 'costs' => []];
+            }
+            $byCourier[$code]['costs'][] = [
+                'service' => $serviceName,
+                'cost' => [['value' => $cost, 'etd' => $etd]],
+            ];
+        }
+        return array_values($byCourier);
     }
 
     /**
@@ -154,75 +271,32 @@ class ShippingService
     }
 
     /**
-     * Get available couriers based on account type
-     * According to RajaOngkir documentation, couriers vary by account type
+     * Get available couriers for Komerce district domestic-cost API
      */
     public function getAvailableCouriers(): array
     {
-        // Based on RajaOngkir account types
         $couriers = [
-            'starter' => [
-                ['code' => 'jne', 'name' => 'JNE'],
-                ['code' => 'pos', 'name' => 'POS Indonesia'],
-                ['code' => 'tiki', 'name' => 'TIKI'],
-            ],
-            'basic' => [
-                ['code' => 'jne', 'name' => 'JNE'],
-                ['code' => 'pos', 'name' => 'POS Indonesia'],
-                ['code' => 'tiki', 'name' => 'TIKI'],
-                ['code' => 'rpx', 'name' => 'RPX'],
-                ['code' => 'pandu', 'name' => 'Pandu'],
-                ['code' => 'wahana', 'name' => 'Wahana'],
-                ['code' => 'sicepat', 'name' => 'SiCepat'],
-                ['code' => 'jnt', 'name' => 'J&T'],
-                ['code' => 'pahala', 'name' => 'Pahala'],
-                ['code' => 'sap', 'name' => 'SAP'],
-                ['code' => 'jet', 'name' => 'JET'],
-                ['code' => 'indah', 'name' => 'Indah Logistic'],
-                ['code' => 'dse', 'name' => 'DSE'],
-                ['code' => 'slis', 'name' => 'SLIS'],
-                ['code' => 'first', 'name' => 'First Logistics'],
-                ['code' => 'ncs', 'name' => 'NCS'],
-                ['code' => 'star', 'name' => 'Star Cargo'],
-                ['code' => 'ninja', 'name' => 'Ninja Express'],
-                ['code' => 'lion', 'name' => 'Lion Parcel'],
-                ['code' => 'idl', 'name' => 'IDL'],
-                ['code' => 'rex', 'name' => 'REX'],
-                ['code' => 'ide', 'name' => 'IDE'],
-                ['code' => 'sentral', 'name' => 'Sentral Cargo'],
-            ],
-            'pro' => [
-                ['code' => 'jne', 'name' => 'JNE'],
-                ['code' => 'pos', 'name' => 'POS Indonesia'],
-                ['code' => 'tiki', 'name' => 'TIKI'],
-                ['code' => 'rpx', 'name' => 'RPX'],
-                ['code' => 'pandu', 'name' => 'Pandu'],
-                ['code' => 'wahana', 'name' => 'Wahana'],
-                ['code' => 'sicepat', 'name' => 'SiCepat'],
-                ['code' => 'jnt', 'name' => 'J&T'],
-                ['code' => 'pahala', 'name' => 'Pahala'],
-                ['code' => 'sap', 'name' => 'SAP'],
-                ['code' => 'jet', 'name' => 'JET'],
-                ['code' => 'indah', 'name' => 'Indah Logistic'],
-                ['code' => 'dse', 'name' => 'DSE'],
-                ['code' => 'slis', 'name' => 'SLIS'],
-                ['code' => 'first', 'name' => 'First Logistics'],
-                ['code' => 'ncs', 'name' => 'NCS'],
-                ['code' => 'star', 'name' => 'Star Cargo'],
-                ['code' => 'ninja', 'name' => 'Ninja Express'],
-                ['code' => 'lion', 'name' => 'Lion Parcel'],
-                ['code' => 'idl', 'name' => 'IDL'],
-                ['code' => 'rex', 'name' => 'REX'],
-                ['code' => 'ide', 'name' => 'IDE'],
-                ['code' => 'sentral', 'name' => 'Sentral Cargo'],
-            ],
+            ['code' => 'jne', 'name' => 'JNE'],
+            ['code' => 'sicepat', 'name' => 'SiCepat'],
+            ['code' => 'ide', 'name' => 'IDE'],
+            ['code' => 'sap', 'name' => 'SAP'],
+            ['code' => 'jnt', 'name' => 'J&T'],
+            ['code' => 'ninja', 'name' => 'Ninja Express'],
+            ['code' => 'tiki', 'name' => 'TIKI'],
+            ['code' => 'lion', 'name' => 'Lion Parcel'],
+            ['code' => 'anteraja', 'name' => 'Anteraja'],
+            ['code' => 'pos', 'name' => 'POS Indonesia'],
+            ['code' => 'ncs', 'name' => 'NCS'],
+            ['code' => 'rex', 'name' => 'REX'],
+            ['code' => 'rpx', 'name' => 'RPX'],
+            ['code' => 'sentral', 'name' => 'Sentral Cargo'],
+            ['code' => 'star', 'name' => 'Star Cargo'],
+            ['code' => 'wahana', 'name' => 'Wahana'],
+            ['code' => 'dse', 'name' => 'DSE'],
         ];
-
-        $accountType = strtolower($this->accountType);
-        
         return [
             'success' => true,
-            'data' => $couriers[$accountType] ?? $couriers['starter'],
+            'data' => $couriers,
         ];
     }
 

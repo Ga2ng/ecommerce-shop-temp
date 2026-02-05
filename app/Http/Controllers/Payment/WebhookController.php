@@ -4,10 +4,11 @@ namespace App\Http\Controllers\Payment;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
-use App\Models\OrderItem;
 use App\Models\PaymentLog;
 use App\Models\Product;
+use App\Models\TransactionRecord;
 use App\Services\PaymentService;
+use App\Services\TransactionMailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -111,6 +112,14 @@ class WebhookController extends Controller
 
             DB::commit();
 
+            // Kirim email struk otomatis setelah pembayaran berhasil
+            if (in_array($transactionStatus, ['settlement', 'capture'])) {
+                $record = TransactionRecord::where('order_id', $order->id)->first();
+                if ($record) {
+                    app(TransactionMailService::class)->sendReceipt($record);
+                }
+            }
+
             return response()->json(['message' => 'OK'], 200);
 
         } catch (\Exception $e) {
@@ -129,27 +138,7 @@ class WebhookController extends Controller
      */
     private function handleSettlement(Order $order, array $payload): void
     {
-        if ($order->status === 'paid') {
-            return; // Already processed
-        }
-
-        $order->status = 'paid';
-        $order->payment_status = $payload['transaction_status'];
-        $order->midtrans_transaction_id = $payload['transaction_id'] ?? null;
-        $order->midtrans_payment_type = $payload['payment_type'] ?? null;
-        $order->paid_at = now();
-        $order->save();
-
-        // Confirm reserved stock (reduce actual stock)
-        foreach ($order->items as $item) {
-            $product = Product::lockForUpdate()->find($item->product_id);
-            if ($product) {
-                $product->confirmReservedStock($item->quantity);
-            }
-        }
-
-        // TODO: Send notification to admin
-        // TODO: Send email to customer
+        $order->markAsPaidFromPayload($payload);
 
         Log::info('Order paid successfully', [
             'order_id' => $order->id,

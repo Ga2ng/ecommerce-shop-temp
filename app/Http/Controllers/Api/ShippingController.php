@@ -16,8 +16,8 @@ class ShippingController extends Controller
     }
 
     /**
-     * Calculate shipping cost
-     * According to RajaOngkir documentation
+     * Calculate shipping cost via Komerce district domestic-cost
+     * origin = origin district ID, destination = destination district ID
      */
     public function calculateCost(Request $request)
     {
@@ -25,13 +25,13 @@ class ShippingController extends Controller
             'origin' => 'required|integer',
             'destination' => 'required|integer',
             'weight' => 'required|integer|min:1',
-            'courier' => 'required|string',
+            'courier' => 'required|string|max:50',
         ]);
 
-        $result = $this->shippingService->getCost(
-            $validated['origin'],
-            $validated['destination'],
-            $validated['weight'],
+        $result = $this->shippingService->getCostDistrict(
+            (int) $validated['origin'],
+            (int) $validated['destination'],
+            (int) $validated['weight'],
             $validated['courier']
         );
 

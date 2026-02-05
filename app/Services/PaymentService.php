@@ -8,6 +8,13 @@ use Midtrans\Snap;
 use Midtrans\Transaction;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Midtrans integration.
+ * Backend: Server Key dipakai sebagai Basic Auth (base64(ServerKey:)) ke Snap API.
+ * Frontend: Client Key dipakai di snap.js, jangan pakai Server Key di frontend.
+ * Sandbox: https://app.sandbox.midtrans.com/snap/v1/transactions
+ * Production: https://app.midtrans.com/snap/v1/transactions
+ */
 class PaymentService
 {
     public function __construct()
@@ -19,10 +26,15 @@ class PaymentService
     }
 
     /**
-     * Generate Snap Token for order
+     * Generate Snap Token for order (POST ke Midtrans Snap API dengan Authorization: Basic base64(ServerKey:))
      */
     public function generateSnapToken(Order $order): string
     {
+        $serverKey = config('services.midtrans.server_key');
+        if (empty($serverKey)) {
+            throw new \InvalidArgumentException('MIDTRANS_SERVER_KEY belum di-set di .env. Ambil dari Midtrans Dashboard → Settings → Access Keys.');
+        }
+
         $params = [
             'transaction_details' => [
                 'order_id' => $order->midtrans_order_id,
@@ -108,13 +120,14 @@ class PaymentService
     }
 
     /**
-     * Verify transaction status from Midtrans
+     * Verify transaction status from Midtrans.
+     * SDK mengembalikan stdClass (json_decode tanpa true); dinormalisasi ke array agar konsisten.
      */
     public function verifyTransaction(string $orderId): ?array
     {
         try {
             $status = Transaction::status($orderId);
-            return $status;
+            return \is_array($status) ? $status : (array) $status;
         } catch (\Exception $e) {
             Log::error('Midtrans Status Check Error: ' . $e->getMessage(), [
                 'order_id' => $orderId,

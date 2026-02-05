@@ -12,6 +12,16 @@
             <div class="lg:col-span-2">
                 <form action="{{ route('payment.process') }}" method="POST" class="space-y-6" id="checkout-form">
                     @csrf
+                    @if($errors->any())
+                        <div class="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4">
+                            <p class="font-semibold text-red-700 dark:text-red-300">Perbaiki hal berikut:</p>
+                            <ul class="mt-2 list-disc list-inside text-sm text-red-600 dark:text-red-400">
+                                @foreach($errors->all() as $err)
+                                    <li>{{ $err }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
                     <input type="hidden" name="product_id" value="{{ $product->id }}">
                     <input type="hidden" name="quantity" value="{{ $quantity }}">
                     <input type="hidden" name="product_weight" value="1000" id="product_weight"> <!-- Default 1kg, bisa diubah -->
@@ -60,11 +70,9 @@
                                 @enderror
                             </div>
 
-                            <!-- Hidden fields for region IDs -->
                             <input type="hidden" name="province_id" id="province_id" value="{{ old('province_id') }}">
                             <input type="hidden" name="city_id" id="city_id" value="{{ old('city_id') }}">
                             <input type="hidden" name="district_id" id="district_id" value="{{ old('district_id') }}">
-                            <input type="hidden" name="village_id" id="village_id" value="{{ old('village_id') }}">
                             <input type="hidden" name="rajaongkir_city_id" id="rajaongkir_city_id" value="{{ old('rajaongkir_city_id') }}">
 
                             <div>
@@ -107,13 +115,11 @@
                                 @enderror
                             </div>
 
-                            <div>
-                                <label for="village_select" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Kelurahan/Desa</label>
-                                <select name="village_select" id="village_select" class="w-full" disabled>
-                                    <option value="">Pilih Kecamatan terlebih dahulu</option>
-                                </select>
-                                <div id="village-loading" class="hidden mt-2 text-sm text-gray-500 dark:text-gray-400">
-                                    <span class="inline-block animate-spin mr-2">⏳</span> Memuat kelurahan...
+                            <div id="shipping-detail-box" class="rounded-xl border border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-800/50 hidden">
+                                <h3 class="text-sm font-semibold text-black dark:text-white mb-2">Detail Pengiriman</h3>
+                                <div class="text-sm space-y-1">
+                                    <p><span class="text-gray-500 dark:text-gray-400">Dari:</span> <span id="origin-label">{{ config('services.rajaongkir.origin_label', 'Toko') }}</span></p>
+                                    <p><span class="text-gray-500 dark:text-gray-400">Ke:</span> <span id="dest-label" class="text-black dark:text-white">Pilih provinsi, kota, dan kecamatan</span></p>
                                 </div>
                             </div>
 
@@ -132,12 +138,12 @@
                             <div>
                                 <label for="shipping_courier" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Kurir *</label>
                                 <select name="shipping_courier" id="shipping_courier" required disabled class="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-emerald-custom focus:border-emerald-custom dark:bg-gray-800 dark:text-white">
-                                    <option value="">Pilih Kota terlebih dahulu</option>
+                                    <option value="">Pilih Kecamatan terlebih dahulu</option>
                                 </select>
                                 <div id="courier-loading" class="hidden mt-2 text-sm text-gray-500 dark:text-gray-400">
                                     <span class="inline-block animate-spin mr-2">⏳</span> Memuat daftar kurir...
                                 </div>
-                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Pilih kota terlebih dahulu untuk mengaktifkan pilihan kurir</p>
+                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Pilih kecamatan terlebih dahulu untuk mengaktifkan pilihan kurir</p>
                                 @error('shipping_courier')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
@@ -150,8 +156,14 @@
                                 </div>
                             </div>
 
-                            <input type="hidden" name="shipping_cost" id="shipping_cost" value="0">
-                            <input type="hidden" name="shipping_service" id="shipping_service" value="">
+                            <input type="hidden" name="shipping_cost" id="shipping_cost" value="{{ old('shipping_cost', '0') }}">
+                            <input type="hidden" name="shipping_service" id="shipping_service" value="{{ old('shipping_service', '') }}">
+                            @error('shipping_service')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                            @error('shipping_courier')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
                         </div>
                     </div>
 
@@ -181,42 +193,47 @@
                     </div>
 
                     <div class="flex justify-end">
-                        <button type="submit" class="px-8 py-4 bg-emerald-custom text-white font-bold rounded-xl hover:bg-[#0ea572] transition-colors">
+                        <button type="submit" id="checkout-submit-btn" class="px-8 py-4 bg-emerald-custom text-white font-bold rounded-xl hover:bg-[#0ea572] transition-colors cursor-pointer">
                             Continue to Payment
                         </button>
                     </div>
+                    <p id="checkout-submit-hint" class="mt-2 text-sm text-amber-600 dark:text-amber-400 hidden">Pilih layanan pengiriman (klik salah satu opsi ongkir) agar biaya ongkir tercatat.</p>
                 </form>
             </div>
 
             <!-- Order Summary -->
             <div class="lg:col-span-1">
                 <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 sticky top-4">
-                    <h2 class="text-xl font-bold text-black dark:text-white mb-6">Order Summary</h2>
+                    <h2 class="text-xl font-bold text-black dark:text-white mb-4">Order Summary</h2>
                     
-                    <div class="space-y-4 mb-6">
-                        <div class="flex items-center gap-4">
+                    <div class="space-y-3 mb-4">
+                        <div class="flex gap-3">
                             @if($product->image)
-                                <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}" class="w-20 h-20 object-cover rounded-lg">
+                                <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}" class="w-16 h-16 object-cover rounded-lg flex-shrink-0">
                             @else
-                                <div class="w-20 h-20 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+                                <div class="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-lg flex-shrink-0"></div>
                             @endif
-                            <div class="flex-1">
-                                <h3 class="font-semibold text-black dark:text-white">{{ $product->name }}</h3>
-                                <p class="text-sm text-gray-600 dark:text-gray-400">Qty: {{ $quantity }}</p>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="font-semibold text-black dark:text-white text-sm">{{ $product->name }}</h3>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ $quantity }} × Rp {{ number_format($product->price, 0, ',', '.') }}</p>
+                                <p class="text-sm font-medium text-black dark:text-white mt-1" id="order-summary-item-total">Rp {{ number_format($product->price * $quantity, 0, ',', '.') }}</p>
                             </div>
                         </div>
                     </div>
 
                     <div class="border-t border-gray-200 dark:border-gray-800 pt-4 space-y-2">
-                        <div class="flex justify-between text-gray-600 dark:text-gray-400">
-                            <span>Subtotal</span>
-                            <span class="font-semibold text-black dark:text-white" id="subtotal-display">Rp {{ number_format($product->price * $quantity, 0, ',', '.') }}</span>
+                        <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400">
+                            <span>Subtotal (item)</span>
+                            <span class="font-medium text-black dark:text-white" id="subtotal-display">Rp {{ number_format($product->price * $quantity, 0, ',', '.') }}</span>
                         </div>
-                        <div class="flex justify-between text-gray-600 dark:text-gray-400">
-                            <span>Shipping</span>
-                            <span class="font-semibold text-black dark:text-white" id="shipping-display">Rp 0</span>
+                        <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400" id="order-summary-shipping-row">
+                            <span>Ongkir</span>
+                            <span class="font-medium text-black dark:text-white" id="shipping-display">Rp 0</span>
                         </div>
-                        <div class="flex justify-between text-xl font-bold text-black dark:text-white pt-4 border-t border-gray-200 dark:border-gray-800">
+                        <div id="order-summary-courier-detail" class="text-xs text-gray-500 dark:text-gray-400 pl-0">
+                            <span id="order-summary-courier-text">Pilih kurir & layanan</span>
+                        </div>
+                        <div class="flex justify-between text-lg font-bold text-black dark:text-white pt-3 border-t border-gray-200 dark:border-gray-800">
                             <span>Total</span>
                             <span class="text-emerald-custom" id="total-display">Rp {{ number_format($product->price * $quantity, 0, ',', '.') }}</span>
                         </div>
@@ -231,12 +248,27 @@
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+// Wait for jQuery to be available
+(function() {
+    function initCheckout() {
+        if (typeof $ === 'undefined') {
+            console.error('jQuery is not loaded!');
+            return;
+        }
+
     const subtotal = {{ $product->price * $quantity }};
     let shippingCost = 0;
 
-    // Initialize Tom Select for provinces
-    // Load all provinces when dropdown is opened
+    // Sebelum submit, pastikan nilai ongkir diambil dari radio yang dipilih (sync ke hidden)
+    document.getElementById('checkout-form').addEventListener('submit', function() {
+        var radio = document.querySelector('input[name="shipping_service_radio"]:checked');
+        if (radio) {
+            document.getElementById('shipping_cost').value = radio.getAttribute('data-cost') || '0';
+            document.getElementById('shipping_service').value = radio.getAttribute('data-service') || '';
+        }
+    });
+
+    // Provinsi diambil dari: route('api.provinces') => /api/provinces (backend memanggil rajaongkir.komerce.id/api/v1/destination/province)
     const provinceSelect = new TomSelect('#province_select', {
         valueField: 'id',
         labelField: 'name',
@@ -245,85 +277,72 @@ document.addEventListener('DOMContentLoaded', function() {
         preload: 'focus',
         load: function(query, callback) {
             // Show loading
-            document.getElementById('province-loading').classList.remove('hidden');
+            $('#province-loading').removeClass('hidden');
             
             // Load all provinces, filter server-side if query provided
             const url = '{{ route("api.provinces") }}' + (query ? '?search=' + encodeURIComponent(query) : '');
             
-            fetch(url, {
+            $.ajax({
+                url: url,
                 method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                }
-            })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    document.getElementById('province-loading').classList.add('hidden');
-                    console.log('Provinces API Response:', data);
-                    if (data && data.data && Array.isArray(data.data) && data.data.length > 0) {
-                        callback(data.data);
+                dataType: 'json',
+                success: function(data) {
+                    $('#province-loading').addClass('hidden');
+                    // Backend selalu return { data: [...] }; terima juga array langsung
+                    var list = (data && Array.isArray(data.data)) ? data.data : (Array.isArray(data) ? data : []);
+                    if (list.length > 0) {
+                        callback(list);
                     } else {
-                        console.warn('No provinces data or empty array:', data);
                         callback([]);
+                        // Pesan untuk user: pastikan RAJAONGKIR_API_KEY di .env
+                        var msg = (data && data.error) ? data.error : 'Data provinsi kosong. Pastikan RAJAONGKIR_API_KEY di file .env sudah diisi.';
+                        provinceSelect.sync();
+                        if (!$('#province-api-error').length) {
+                            $('#province-loading').after('<p id="province-api-error" class="mt-2 text-sm text-amber-600 dark:text-amber-400">' + msg + '</p>');
+                        }
                     }
-                })
-                .catch(error => {
-                    console.error('Error loading provinces:', error);
-                    document.getElementById('province-loading').classList.add('hidden');
+                },
+                error: function(xhr, status, error) {
+                    $('#province-loading').addClass('hidden');
                     callback([]);
-                });
+                    var errMsg = (xhr.responseJSON && xhr.responseJSON.error) ? xhr.responseJSON.error : 'Gagal memuat provinsi. Cek RAJAONGKIR_API_KEY di .env.';
+                    if (!$('#province-api-error').length) {
+                        $('#province-loading').after('<p id="province-api-error" class="mt-2 text-sm text-amber-600 dark:text-amber-400">' + errMsg + '</p>');
+                    }
+                }
+            });
         },
         onChange: function(value) {
-            document.getElementById('province_id').value = value;
+            $('#province_id').val(value);
             
             // Reset all child dropdowns when province changes
             citySelect.clearOptions();
             citySelect.clear();
             citySelect.disable();
-            document.getElementById('city_id').value = '';
-            document.getElementById('rajaongkir_city_id').value = '';
+            $('#city_id').val('');
+            $('#rajaongkir_city_id').val('');
             
             districtSelect.clearOptions();
             districtSelect.clear();
             districtSelect.disable();
-            document.getElementById('district_id').value = '';
-            
-            villageSelect.clearOptions();
-            villageSelect.clear();
-            villageSelect.disable();
-            document.getElementById('village_id').value = '';
-            
+            $('#district_id').val('');
             courierSelect.disabled = true;
             courierSelect.value = '';
-            
+            $('#shipping-detail-box').addClass('hidden');
             if (value) {
                 citySelect.enable();
                 // Show loading indicator
-                document.getElementById('city-loading').classList.remove('hidden');
+                $('#city-loading').removeClass('hidden');
                 // Preload all cities for selected province first
                 const loadUrl = '{{ route("api.cities", ":id") }}'.replace(':id', value);
-                fetch(loadUrl, {
+                
+                $.ajax({
+                    url: loadUrl,
                     method: 'GET',
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                    }
-                })
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
+                    dataType: 'json',
+                    success: function(data) {
                         // Hide loading indicator
-                        document.getElementById('city-loading').classList.add('hidden');
+                        $('#city-loading').addClass('hidden');
                         console.log('Cities API Response:', data);
                         
                         if (data.error) {
@@ -344,31 +363,25 @@ document.addEventListener('DOMContentLoaded', function() {
                             console.warn('No cities found for province:', value, data);
                             citySelect.clearOptions();
                         }
-                    })
-                    .catch(error => {
+                    },
+                    error: function(xhr, status, error) {
                         // Hide loading indicator
-                        document.getElementById('city-loading').classList.add('hidden');
+                        $('#city-loading').addClass('hidden');
                         console.error('Error loading cities:', error);
+                        console.error('XHR Response:', xhr.responseText);
                         citySelect.clearOptions();
-                    });
+                    }
+                });
                 
                 // Load function for search
                 citySelect.load(function(query, callback) {
                     const url = '{{ route("api.cities", ":id") }}'.replace(':id', value) + (query ? '?search=' + encodeURIComponent(query) : '');
-                    fetch(url, {
+                    
+                    $.ajax({
+                        url: url,
                         method: 'GET',
-                        headers: {
-                            'Accept': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest',
-                        }
-                    })
-                        .then(response => {
-                            if (!response.ok) {
-                                throw new Error(`HTTP error! status: ${response.status}`);
-                            }
-                            return response.json();
-                        })
-                        .then(data => {
+                        dataType: 'json',
+                        success: function(data) {
                             if (data && data.data && Array.isArray(data.data)) {
                                 // Komerce.id API format: {id, name, zip_code}
                                 callback(data.data.map(item => ({
@@ -378,11 +391,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             } else {
                                 callback([]);
                             }
-                        })
-                        .catch(error => {
+                        },
+                        error: function(xhr, status, error) {
                             console.error('Error searching cities:', error);
                             callback([]);
-                        });
+                        }
+                    });
                 });
             }
         }
@@ -396,51 +410,32 @@ document.addEventListener('DOMContentLoaded', function() {
         placeholder: 'Cari Kota/Kabupaten...',
         disabled: true,
         onChange: function(value, text) {
-            document.getElementById('city_id').value = value;
-            
-            // With Komerce.id API, city ID is already compatible with RajaOngkir
+            $('#city_id').val(value);
             if (value) {
-                // City ID from Komerce.id API is already the same as RajaOngkir
-                document.getElementById('rajaongkir_city_id').value = value;
-                
-                // Load couriers from RajaOngkir API
-                loadCouriers();
-                
-                // Recalculate shipping if courier already selected
-                const courier = courierSelect.value;
-                if (courier) {
-                    calculateShipping(courier, value);
-                }
+                $('#rajaongkir_city_id').val(value);
             } else {
-                document.getElementById('rajaongkir_city_id').value = '';
-                courierSelect.disable();
+                $('#rajaongkir_city_id').val('');
             }
-            
-            // Reset child dropdowns when city changes
             districtSelect.clearOptions();
             districtSelect.clear();
             districtSelect.disable();
-            document.getElementById('district_id').value = '';
-            
-            villageSelect.clearOptions();
-            villageSelect.clear();
-            villageSelect.disable();
-            document.getElementById('village_id').value = '';
-            
+            $('#district_id').val('');
+            courierSelect.disabled = true;
+            courierSelect.value = '';
+            $('#shipping-detail-box').addClass('hidden');
             if (value) {
                 districtSelect.enable();
                 // Preload all districts for selected city first
                 const loadUrl = '{{ route("api.districts", ":id") }}'.replace(':id', value);
-                fetch(loadUrl)
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Network response was not ok');
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
+                $('#district-loading').removeClass('hidden');
+                
+                $.ajax({
+                    url: loadUrl,
+                    method: 'GET',
+                    dataType: 'json',
+                    success: function(data) {
                         // Hide loading indicator
-                        document.getElementById('district-loading').classList.add('hidden');
+                        $('#district-loading').addClass('hidden');
                         if (data.error) {
                             console.error('API Error:', data.error);
                             districtSelect.clearOptions();
@@ -452,35 +447,36 @@ document.addEventListener('DOMContentLoaded', function() {
                             console.warn('No districts found for city:', value);
                             districtSelect.clearOptions();
                         }
-                    })
-                    .catch(error => {
+                    },
+                    error: function(xhr, status, error) {
                         // Hide loading indicator
-                        document.getElementById('district-loading').classList.add('hidden');
+                        $('#district-loading').addClass('hidden');
                         console.error('Error loading districts:', error);
+                        console.error('XHR Response:', xhr.responseText);
                         districtSelect.clearOptions();
-                    });
+                    }
+                });
                 
                 // Load function for search
                 districtSelect.load(function(query, callback) {
                     const url = '{{ route("api.districts", ":id") }}'.replace(':id', value) + (query ? '?search=' + encodeURIComponent(query) : '');
-                    fetch(url)
-                        .then(response => {
-                            if (!response.ok) {
-                                throw new Error('Network response was not ok');
-                            }
-                            return response.json();
-                        })
-                        .then(data => {
+                    
+                    $.ajax({
+                        url: url,
+                        method: 'GET',
+                        dataType: 'json',
+                        success: function(data) {
                             if (data.error) {
                                 callback([]);
                                 return;
                             }
                             callback(data.data || []);
-                        })
-                        .catch(error => {
+                        },
+                        error: function(xhr, status, error) {
                             console.error('Error searching districts:', error);
                             callback([]);
-                        });
+                        }
+                    });
                 });
             }
         }
@@ -495,83 +491,27 @@ document.addEventListener('DOMContentLoaded', function() {
         disabled: true,
         onChange: function(value) {
             document.getElementById('district_id').value = value;
-            
-            // Reset village dropdown when district changes
-            villageSelect.clearOptions();
-            villageSelect.clear();
-            villageSelect.disable();
-            document.getElementById('village_id').value = '';
-            
             if (value) {
-                villageSelect.enable();
-                // Show loading indicator
-                document.getElementById('village-loading').classList.remove('hidden');
-                // Preload all villages for selected district first
-                const loadUrl = '{{ route("api.villages", ":id") }}'.replace(':id', value);
-                fetch(loadUrl)
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Network response was not ok');
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        // Hide loading indicator
-                        document.getElementById('village-loading').classList.add('hidden');
-                        if (data.error) {
-                            console.error('API Error:', data.error);
-                            villageSelect.clearOptions();
-                            return;
-                        }
-                        if (data.data && data.data.length > 0) {
-                            villageSelect.addOptions(data.data);
-                        } else {
-                            console.warn('No villages found for district:', value);
-                            villageSelect.clearOptions();
-                        }
-                    })
-                    .catch(error => {
-                        // Hide loading indicator
-                        document.getElementById('village-loading').classList.add('hidden');
-                        console.error('Error loading villages:', error);
-                        villageSelect.clearOptions();
-                    });
-                
-                // Load function for search
-                villageSelect.load(function(query, callback) {
-                    const url = '{{ route("api.villages", ":id") }}'.replace(':id', value) + (query ? '?search=' + encodeURIComponent(query) : '');
-                    fetch(url)
-                        .then(response => {
-                            if (!response.ok) {
-                                throw new Error('Network response was not ok');
-                            }
-                            return response.json();
-                        })
-                        .then(data => {
-                            if (data.error) {
-                                callback([]);
-                                return;
-                            }
-                            callback(data.data || []);
-                        })
-                        .catch(error => {
-                            console.error('Error searching villages:', error);
-                            callback([]);
-                        });
-                });
+                loadCouriers();
+                courierSelect.disabled = false;
+                var pOpt = provinceSelect.getOption(provinceSelect.value);
+                var cOpt = citySelect.getOption(citySelect.value);
+                var dOpt = districtSelect.getOption(value);
+                var pText = (pOpt && pOpt.name) ? pOpt.name : '';
+                var cText = (cOpt && cOpt.name) ? cOpt.name : '';
+                var dText = (dOpt && dOpt.name) ? dOpt.name : '';
+                var destStr = [pText, cText, dText].filter(Boolean).join(', ') || 'Pilih provinsi, kota, dan kecamatan';
+                $('#dest-label').text(destStr);
+                $('#shipping-detail-box').removeClass('hidden');
+                var courier = courierSelect.value;
+                if (courier) {
+                    calculateShipping(courier, value);
+                }
+            } else {
+                courierSelect.disabled = true;
+                courierSelect.value = '';
+                $('#shipping-detail-box').addClass('hidden');
             }
-        }
-    });
-
-    // Initialize Tom Select for villages
-    const villageSelect = new TomSelect('#village_select', {
-        valueField: 'id',
-        labelField: 'name',
-        searchField: 'name',
-        placeholder: 'Cari Kelurahan/Desa...',
-        disabled: true,
-        onChange: function(value) {
-            document.getElementById('village_id').value = value;
         }
     });
 
@@ -614,149 +554,164 @@ document.addEventListener('DOMContentLoaded', function() {
 
     courierSelect.addEventListener('change', function() {
         const courier = this.value;
-        const rajaongkirCityId = document.getElementById('rajaongkir_city_id').value;
-
-        if (!courier || !rajaongkirCityId) {
+        const districtId = document.getElementById('district_id').value;
+        if (!courier || !districtId) {
             shippingServicesDiv.classList.add('hidden');
             updateShippingCost(0, '');
-            if (!rajaongkirCityId) {
-                shippingServicesList.innerHTML = '<div class="text-sm text-yellow-600">Pilih kota terlebih dahulu untuk menghitung ongkir.</div>';
+            if (!districtId) {
+                shippingServicesList.innerHTML = '<div class="text-sm text-yellow-600">Pilih kecamatan terlebih dahulu untuk menghitung ongkir.</div>';
             }
             return;
         }
-
-        // Calculate shipping cost using RajaOngkir city ID
-        calculateShipping(courier, rajaongkirCityId);
+        calculateShipping(courier, districtId);
     });
 
     // Also recalculate when city changes (handled in onChange above)
 
-    function calculateShipping(courier, destination) {
-        const origin = {{ config('services.rajaongkir.origin_city_id', '444') }}; // City ID origin toko (Surabaya)
-        const weight = document.getElementById('product_weight').value;
-        
-        // destination should be RajaOngkir city ID
-        if (!destination) {
+    function calculateShipping(courier, destinationDistrictId) {
+        const originDistrictId = {{ config('services.rajaongkir.origin_district_id', '1391') }};
+        const weight = document.getElementById('product_weight').value || 1000;
+        if (!destinationDistrictId) {
             shippingServicesDiv.classList.add('hidden');
             updateShippingCost(0, '');
             return;
         }
-
-        shippingServicesList.innerHTML = '<div class="text-sm text-gray-500">Menghitung ongkir...</div>';
-
+        shippingServicesList.innerHTML = '<div class="text-sm text-gray-500">Memanggil API ongkir...</div>';
+        shippingServicesDiv.classList.remove('hidden');
         fetch('{{ route("api.shipping.calculate") }}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : '{{ csrf_token() }}',
+                'X-Requested-With': 'XMLHttpRequest'
             },
             body: JSON.stringify({
-                origin: origin,
-                destination: destination,
-                weight: weight,
+                origin: originDistrictId,
+                destination: parseInt(destinationDistrictId, 10),
+                weight: parseInt(weight, 10) || 1000,
                 courier: courier
             })
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success && data.data && data.data.length > 0) {
-                const courierData = data.data[0];
+        .then(function(response) {
+            return response.json().then(function(data) {
+                if (!response.ok) {
+                    throw new Error(data.message || 'HTTP ' + response.status);
+                }
+                return data;
+            });
+        })
+        .then(function(data) {
+            var list = data.data;
+            if (!list) list = [];
+            if (!Array.isArray(list)) list = [list];
+            if (data.success && list.length > 0) {
+                var courierData = list[0];
+                var costs = courierData.costs || courierData.services || [];
                 shippingServicesList.innerHTML = '';
 
-                if (!courierData.costs || courierData.costs.length === 0) {
-                    shippingServicesList.innerHTML = '<div class="text-sm text-red-600">Tidak ada layanan pengiriman tersedia untuk kurir ini.</div>';
+                if (costs.length === 0) {
+                    shippingServicesList.innerHTML = '<div class="text-sm text-red-600">Tidak ada layanan untuk kurir ini.</div>';
                     updateShippingCost(0, '');
                     return;
                 }
 
-                // Store all services for summary display
-                let allServices = [];
-                
-                courierData.costs.forEach(cost => {
-                    if (!cost.cost || cost.cost.length === 0) {
-                        return;
-                    }
-                    
-                    cost.cost.forEach(service => {
-                        const serviceId = `${courier}_${cost.service}_${service.value}`;
-                        const etd = service.etd ? service.etd.replace(' HARI', '').replace(' hari', '') : '-';
-                        const etdText = etd !== '-' ? `${etd} hari` : 'Estimasi belum tersedia';
-                        
-                        // Store service info
-                        allServices.push({
-                            service: cost.service,
-                            cost: service.value,
-                            etd: etdText
-                        });
-                        
-                        const label = document.createElement('label');
+                costs.forEach(function(cost) {
+                    var serviceName = cost.service || cost.name || 'Layanan';
+                    var costArr = cost.cost || (cost.price !== undefined ? [{ value: cost.price, etd: cost.etd || '-' }] : []);
+                    if (!costArr.length) return;
+                    costArr.forEach(function(s) {
+                        var val = typeof s === 'object' ? (s.value ?? s.price ?? 0) : s;
+                        var etd = typeof s === 'object' ? (s.etd || '-') : '-';
+                        var etdText = (etd !== '-' && etd !== '') ? (String(etd).replace(' HARI', '').replace(' hari', '') + ' hari') : 'Estimasi belum tersedia';
+                        var serviceId = courier + '_' + serviceName + '_' + val;
+                        var radio = document.createElement('input');
+                        radio.type = 'radio';
+                        radio.name = 'shipping_service_radio';
+                        radio.value = serviceId;
+                        radio.setAttribute('data-cost', val);
+                        radio.setAttribute('data-service', serviceName);
+                        radio.setAttribute('data-etd', etdText);
+                        radio.className = 'mr-3 text-emerald-custom focus:ring-emerald-custom';
+                        var label = document.createElement('label');
                         label.className = 'flex items-center p-3 border border-gray-300 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors';
-                        label.innerHTML = `
-                            <input type="radio" name="shipping_service_radio" value="${serviceId}" data-cost="${service.value}" data-service="${cost.service}" data-etd="${etdText}" class="mr-3 text-emerald-custom focus:ring-emerald-custom">
-                            <div class="flex-1">
-                                <div class="font-medium text-black dark:text-white">${cost.service}</div>
-                                <div class="text-sm text-gray-600 dark:text-gray-400">${etdText} - Rp ${parseInt(service.value).toLocaleString('id-ID')}</div>
-                            </div>
-                        `;
-                        label.addEventListener('change', function() {
-                            if (this.querySelector('input').checked) {
-                                const selectedEtd = this.querySelector('input').getAttribute('data-etd');
-                                updateShippingCost(service.value, cost.service, selectedEtd);
-                            }
-                        });
+                        label.appendChild(radio);
+                        var div = document.createElement('div');
+                        div.className = 'flex-1';
+                        div.innerHTML = '<div class="font-medium text-black dark:text-white">' + serviceName + '</div><div class="text-sm text-gray-600 dark:text-gray-400">' + etdText + ' - Rp ' + parseInt(val, 10).toLocaleString('id-ID') + '</div>';
+                        label.appendChild(div);
+                        function syncShipping() {
+                            if (radio.checked) updateShippingCost(radio.getAttribute('data-cost'), radio.getAttribute('data-service'), radio.getAttribute('data-etd'));
+                        }
+                        radio.addEventListener('change', syncShipping);
+                        label.addEventListener('click', function() { setTimeout(syncShipping, 0); });
                         shippingServicesList.appendChild(label);
                     });
                 });
-                
-                // Update summary with all available services
-                updateShippingSummary(allServices);
 
                 shippingServicesDiv.classList.remove('hidden');
             } else {
-                const errorMsg = data.message || 'Gagal menghitung ongkir. Silakan coba lagi.';
-                shippingServicesList.innerHTML = `<div class="text-sm text-red-600">${errorMsg}</div>`;
+                var errorMsg = data.message || 'Gagal hit API ongkir. Cek RAJAONGKIR_CALCULATE_API_KEY di .env.';
+                shippingServicesList.innerHTML = '<div class="text-sm text-red-600">' + errorMsg + '</div>';
                 updateShippingCost(0, '');
             }
         })
-        .catch(error => {
-            console.error('Error:', error);
-            shippingServicesList.innerHTML = '<div class="text-sm text-red-600">Terjadi kesalahan saat menghitung ongkir.</div>';
+        .catch(function(err) {
+            console.error('Ongkir API error:', err);
+            shippingServicesList.innerHTML = '<div class="text-sm text-red-600">Gagal memanggil API ongkir: ' + (err.message || 'Silakan coba lagi.') + '</div>';
             updateShippingCost(0, '');
         });
     }
 
-    function updateShippingCost(cost, service, etd = '') {
-        shippingCost = parseInt(cost) || 0;
-        document.getElementById('shipping_cost').value = shippingCost;
-        document.getElementById('shipping_service').value = service || '';
-        
-        const total = subtotal + shippingCost;
-        
-        document.getElementById('shipping-display').textContent = 'Rp ' + shippingCost.toLocaleString('id-ID');
-        document.getElementById('total-display').textContent = 'Rp ' + total.toLocaleString('id-ID');
-        
-        // Update shipping summary
-        const courierSelect = document.getElementById('shipping_courier');
-        const courierName = courierSelect.options[courierSelect.selectedIndex]?.text || '-';
-        document.getElementById('summary-courier').textContent = courierName;
-        document.getElementById('summary-service').textContent = service || '-';
-        document.getElementById('summary-etd').textContent = etd || '-';
-        document.getElementById('summary-shipping-cost').textContent = 'Rp ' + shippingCost.toLocaleString('id-ID');
-        
-        // Show summary if shipping cost > 0
-        const summaryDiv = document.getElementById('shipping-summary');
-        if (shippingCost > 0) {
-            summaryDiv.classList.remove('hidden');
-        } else {
-            summaryDiv.classList.add('hidden');
+    function updateShippingCost(cost, service, etd) {
+        cost = parseInt(cost, 10) || 0;
+        service = service || '';
+        etd = etd || '-';
+        shippingCost = cost;
+        var shippingCostEl = document.getElementById('shipping_cost');
+        var shippingServiceEl = document.getElementById('shipping_service');
+        if (shippingCostEl) shippingCostEl.value = cost;
+        if (shippingServiceEl) shippingServiceEl.value = service;
+        var total = subtotal + cost;
+        var shippingDisplay = document.getElementById('shipping-display');
+        var totalDisplay = document.getElementById('total-display');
+        if (shippingDisplay) shippingDisplay.textContent = 'Rp ' + cost.toLocaleString('id-ID');
+        if (totalDisplay) totalDisplay.textContent = 'Rp ' + total.toLocaleString('id-ID');
+        var courierSelectEl = document.getElementById('shipping_courier');
+        var courierName = (courierSelectEl && courierSelectEl.selectedIndex >= 0 && courierSelectEl.options[courierSelectEl.selectedIndex]) ? courierSelectEl.options[courierSelectEl.selectedIndex].text : '-';
+        var summaryCourier = document.getElementById('summary-courier');
+        var summaryService = document.getElementById('summary-service');
+        var summaryEtd = document.getElementById('summary-etd');
+        var summaryShippingCost = document.getElementById('summary-shipping-cost');
+        if (summaryCourier) summaryCourier.textContent = courierName;
+        if (summaryService) summaryService.textContent = service || '-';
+        if (summaryEtd) summaryEtd.textContent = etd;
+        if (summaryShippingCost) summaryShippingCost.textContent = 'Rp ' + cost.toLocaleString('id-ID');
+        var summaryDiv = document.getElementById('shipping-summary');
+        var courierDetailEl = document.getElementById('order-summary-courier-text');
+        if (summaryDiv) {
+            if (cost > 0 && service) summaryDiv.classList.remove('hidden'); else summaryDiv.classList.add('hidden');
         }
+        if (courierDetailEl) courierDetailEl.textContent = (cost > 0 && service) ? (courierName + ' - ' + service) : 'Pilih kurir & layanan';
     }
     
-    function updateShippingSummary(allServices) {
-        // This function can be used to display all available services if needed
-        // Currently, services are displayed in the shipping services list
+    function updateShippingSummary(allServices) {}
+    } // End initCheckout function
+    
+    // Try to initialize when jQuery is ready
+    if (typeof $ !== 'undefined') {
+        $(document).ready(initCheckout);
+    } else {
+        // Wait for jQuery to load
+        window.addEventListener('load', function() {
+            if (typeof $ !== 'undefined') {
+                $(document).ready(initCheckout);
+            } else {
+                console.error('jQuery failed to load!');
+            }
+        });
     }
-});
+})();
 </script>
 @endpush
 @endsection
