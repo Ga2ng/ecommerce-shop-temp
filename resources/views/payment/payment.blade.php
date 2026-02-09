@@ -3,6 +3,15 @@
 @section('title', 'Konfirmasi Pembayaran')
 
 @section('content')
+<!-- Loading overlay: payment processing - user tidak bisa klik apapun sampai redirect atau modal ditutup -->
+<div id="payment-loading-overlay" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl p-8 max-w-sm w-full mx-4 text-center shadow-2xl">
+        <div class="inline-block w-12 h-12 border-4 border-emerald-custom border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p class="text-lg font-semibold text-black dark:text-white">Memproses pembayaran...</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Selesaikan di jendela pembayaran. Jangan tutup halaman ini.</p>
+    </div>
+</div>
+
 <div class="min-h-screen bg-white dark:bg-black py-12">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-8">
@@ -76,20 +85,26 @@
 @push('scripts')
 <script src="{{ config('services.midtrans.is_production', false) ? 'https://app.midtrans.com/snap/snap.js' : 'https://app.sandbox.midtrans.com/snap/snap.js' }}" data-client-key="{{ config('services.midtrans.client_key') }}"></script>
 <script>
-    window.snap.pay('{{ $snapToken }}', {
-        onSuccess: function(result) {
-            window.location.href = '{{ route('payment.success', $order->id) }}';
-        },
-        onPending: function(result) {
-            window.location.href = '{{ route('payment.success', $order->id) }}';
-        },
-        onError: function(result) {
-            window.location.href = '{{ route('payment.failed', $order->id) }}';
-        },
-        onClose: function() {
-            // User closed the popup without finishing the payment
-        }
-    });
+    (function() {
+        var overlay = document.getElementById('payment-loading-overlay');
+        window.snap.pay('{{ $snapToken }}', {
+            onSuccess: function(result) {
+                if (overlay) overlay.classList.remove('hidden');
+                window.location.href = '{{ route('payment.success', $order->id) }}';
+            },
+            onPending: function(result) {
+                if (overlay) overlay.classList.remove('hidden');
+                window.location.href = '{{ route('payment.success', $order->id) }}';
+            },
+            onError: function(result) {
+                if (overlay) overlay.classList.remove('hidden');
+                window.location.href = '{{ route('payment.failed', $order->id) }}';
+            },
+            onClose: function() {
+                if (overlay) overlay.classList.add('hidden');
+            }
+        });
+    })();
 </script>
 @endpush
 @endsection

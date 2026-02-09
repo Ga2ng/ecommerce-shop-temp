@@ -65,9 +65,12 @@
                 <p class="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto">
                     Temukan berbagai produk merchandise berkualitas tinggi dengan harga terjangkau untuk mendukung bisnis Anda
                 </p>
-                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <div class="flex flex-col sm:flex-row gap-4 justify-center flex-wrap">
                     <a href="{{ route('catalog.index') }}" class="px-8 py-3 bg-emerald-custom text-white font-semibold rounded-md hover:bg-[#0ea572] transition-colors">
                         Lihat Katalog
+                    </a>
+                    <a href="{{ route('order.index') }}" class="px-8 py-3 bg-white/10 text-white font-semibold rounded-md border-2 border-white hover:bg-white hover:text-black transition-colors">
+                        Cari nomor order
                     </a>
                     <a href="#news" class="px-8 py-3 bg-transparent border-2 border-white text-white font-semibold rounded-md hover:bg-white hover:text-black transition-colors">
                         Berita Terbaru
@@ -75,6 +78,35 @@
                 </div>
             </div>
         </section>
+
+        <!-- Cek Order by No Order -->
+        {{-- <section class="py-12 lg:py-16 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-800">
+            <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 lg:p-8 shadow-sm">
+                    <h2 class="text-xl font-bold text-black dark:text-white mb-2">Cek status order</h2>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Masukkan nomor order Anda untuk melihat detail pesanan.</p>
+                    <form action="{{ route('order.lookup') }}" method="POST" class="flex flex-col sm:flex-row gap-3">
+                        @csrf
+                        <input type="text"
+                               name="order_number"
+                               value="{{ old('order_number') }}"
+                               placeholder="Contoh: ORD-XXXXXXXX-20260209"
+                               class="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-black dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-custom focus:border-transparent"
+                               required
+                        >
+                        <button type="submit" class="px-6 py-3 bg-emerald-custom text-white font-semibold rounded-lg hover:bg-[#0ea572] transition-colors whitespace-nowrap">
+                            Lihat order
+                        </button>
+                    </form>
+                    @if(session('order_lookup_error'))
+                        <p class="mt-3 text-sm text-red-600 dark:text-red-400">{{ session('order_lookup_error') }}</p>
+                    @endif
+                    <p class="mt-4 text-center">
+                        <a href="{{ route('order.index') }}" class="text-sm font-medium text-emerald-custom hover:underline">Buka halaman cari nomor order →</a>
+                    </p>
+                </div>
+            </div>
+        </section> --}}
 
         <!-- Catalog Products Section -->
         <section id="catalog" class="py-16 lg:py-24 bg-white dark:bg-black">

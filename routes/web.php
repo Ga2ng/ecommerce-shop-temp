@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\WelcomeController;
 use App\Http\Controllers\NewsController;
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\Payment\PaymentController;
 use App\Http\Controllers\Payment\WebhookController;
 use Illuminate\Support\Facades\Route;
@@ -34,6 +35,12 @@ Route::get('/payment/{order}/failed', [PaymentController::class, 'failed'])->nam
 
 // Webhook Route (no auth required)
 Route::post('/webhook/midtrans', [WebhookController::class, 'handle'])->name('payment.webhook');
+
+// Order: halaman cari nomor order (index) + lookup + view + download struk
+Route::get('/order/cek', [OrderController::class, 'index'])->name('order.index');
+Route::post('/order/cek', [OrderController::class, 'lookup'])->name('order.lookup');
+Route::get('/order/{order_number}/struk', [OrderController::class, 'receiptPdf'])->name('order.receipt')->where('order_number', '[A-Za-z0-9\-]+');
+Route::get('/order/{order_number}', [OrderController::class, 'show'])->name('order.show')->where('order_number', '[A-Za-z0-9\-]+');
 
 // API Routes for Regions
 Route::prefix('api')->group(function () {

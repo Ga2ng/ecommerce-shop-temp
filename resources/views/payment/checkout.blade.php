@@ -3,6 +3,15 @@
 @section('title', 'Checkout')
 
 @section('content')
+<!-- Loading overlay saat submit checkout -->
+<div id="checkout-loading-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl p-8 max-w-sm w-full mx-4 text-center shadow-2xl">
+        <div class="inline-block w-12 h-12 border-4 border-emerald-custom border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p class="text-lg font-semibold text-black dark:text-white">Memproses checkout...</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Jangan tutup halaman ini</p>
+    </div>
+</div>
+
 <div class="min-h-screen bg-white dark:bg-black py-12">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 class="text-3xl font-bold text-black dark:text-white mb-8">Checkout</h1>
@@ -259,12 +268,17 @@
     const subtotal = {{ $product->price * $quantity }};
     let shippingCost = 0;
 
-    // Sebelum submit, pastikan nilai ongkir diambil dari radio yang dipilih (sync ke hidden)
-    document.getElementById('checkout-form').addEventListener('submit', function() {
+    // Sebelum submit: sync ongkir + tampilkan loading overlay (cegah double submit)
+    document.getElementById('checkout-form').addEventListener('submit', function(e) {
         var radio = document.querySelector('input[name="shipping_service_radio"]:checked');
         if (radio) {
             document.getElementById('shipping_cost').value = radio.getAttribute('data-cost') || '0';
             document.getElementById('shipping_service').value = radio.getAttribute('data-service') || '';
+        }
+        var overlay = document.getElementById('checkout-loading-overlay');
+        if (overlay) {
+            overlay.classList.remove('hidden');
+            this.querySelector('button[type="submit"]').disabled = true;
         }
     });
 

@@ -44,15 +44,40 @@
             </p>
         </div>
 
+        @if($order->status === 'paid')
+        <div class="flex justify-center mb-6">
+            <a href="{{ route('order.receipt', $order->order_number) }}" class="inline-flex items-center gap-2 px-6 py-3 bg-gray-800 dark:bg-gray-700 text-white font-semibold rounded-xl hover:bg-gray-900 dark:hover:bg-gray-600 transition-colors" id="download-struk-btn">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                Download struk
+            </a>
+        </div>
+        @endif
+
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
             <a href="{{ route('catalog.index') }}" class="px-6 py-3 bg-emerald-custom text-white font-semibold rounded-xl hover:bg-[#0ea572] transition-colors text-center">
-                Continue Shopping
+                Lanjut Belanja
             </a>
-            <a href="{{ route('dashboard') }}" class="px-6 py-3 border-2 border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-xl hover:border-emerald-custom hover:text-emerald-custom transition-colors text-center">
-                View Orders
+            <a href="{{ route('order.show', $order->order_number) }}" class="px-6 py-3 border-2 border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-xl hover:border-emerald-custom hover:text-emerald-custom transition-colors text-center">
+                Order page
             </a>
         </div>
     </div>
 </div>
+
+@if($order->status === 'paid')
+@push('scripts')
+<script>
+(function() {
+    var key = 'struk_download_{{ $order->order_number }}';
+    if (!sessionStorage.getItem(key)) {
+        sessionStorage.setItem(key, '1');
+        document.getElementById('download-struk-btn').click();
+    }
+})();
+</script>
+@endpush
+@endif
 @endsection
 
