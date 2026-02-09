@@ -71,6 +71,7 @@
                 <thead class="bg-gray-50 dark:bg-gray-800">
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">No. Order</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Produk</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Customer</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tanggal</th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Subtotal</th>
@@ -86,6 +87,31 @@
                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="text-sm font-medium text-black dark:text-white">{{ $tr->order_number }}</span>
+                            </td>
+                            <td class="px-6 py-4">
+                                @if($tr->order && $tr->order->items->isNotEmpty())
+                                    <div class="flex flex-col gap-2">
+                                        @foreach($tr->order->items as $item)
+                                            <div class="flex items-center gap-2">
+                                                <div class="flex-shrink-0 w-10 h-10 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                                                    @if($item->product && $item->product->image)
+                                                        <img src="{{ asset('storage/' . $item->product->image) }}" alt="{{ $item->product_name }}" class="w-full h-full object-cover">
+                                                    @else
+                                                        <div class="w-full h-full flex items-center justify-center">
+                                                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                                <div class="min-w-0">
+                                                    <p class="text-sm font-medium text-black dark:text-white truncate max-w-[180px]" title="{{ $item->product_name }}">{{ $item->product_name }}</p>
+                                                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ $item->quantity }} × Rp {{ number_format($item->price, 0, ',', '.') }}</p>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <span class="text-sm text-gray-400">–</span>
+                                @endif
                             </td>
                             <td class="px-6 py-4">
                                 <div class="text-sm text-black dark:text-white">{{ $tr->customer_name }}</div>
@@ -129,7 +155,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9" class="px-6 py-12 text-center">
+                            <td colspan="10" class="px-6 py-12 text-center">
                                 <p class="text-gray-500 dark:text-gray-400">Belum ada transaksi berhasil.</p>
                             </td>
                         </tr>

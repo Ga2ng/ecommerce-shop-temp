@@ -14,7 +14,7 @@ class TransactionController extends Controller
      */
     public function index(Request $request): View
     {
-        $query = TransactionRecord::query()->with('order')->latest('paid_at');
+        $query = TransactionRecord::query()->with(['order.items.product'])->latest('paid_at');
 
         // Pencarian: no. order, nama, email
         if ($request->filled('search')) {
