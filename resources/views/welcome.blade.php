@@ -5,6 +5,8 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>{{ config('app.name', 'E-comm') }}</title>
 
+        @include('layouts.partials.theme-init')
+
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
@@ -12,9 +14,9 @@
         <!-- Styles / Scripts -->
             @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans antialiased bg-white dark:bg-black">
+    <body class="font-sans antialiased bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200">
         <!-- Navigation -->
-        <nav class="bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50">
+        <nav class="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50 shadow-sm transition-colors duration-200">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between items-center h-16">
                     <div class="flex items-center">
@@ -25,7 +27,8 @@
                             <span class="text-2xl font-bold text-black dark:text-white">E-comm</span>
                         </a>
                     </div>
-                    <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-3">
+                        <x-dark-mode-toggle />
             @if (Route::has('login'))
                     @auth
                                 <a href="{{ url('/dashboard') }}" class="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-emerald-custom dark:hover:text-emerald-custom transition-colors">

@@ -7,6 +7,8 @@
 
         <title>@yield('title', 'Product Catalog') - {{ config('app.name', 'E-comm') }}</title>
 
+        @include('layouts.partials.theme-init')
+
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
@@ -14,9 +16,9 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans antialiased bg-gray-50 dark:bg-black">
+    <body class="font-sans antialiased bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200">
         <!-- Minimalist Navigation Bar -->
-        <nav class="bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-800/50 sticky top-0 z-50">
+        <nav class="bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50 shadow-sm transition-colors duration-200">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between h-16">
                     <!-- Logo -->
@@ -35,7 +37,8 @@
                     </div>
 
                     <!-- User Menu & Mobile Toggle -->
-                    <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-3">
+                        <x-dark-mode-toggle />
                         @if (Route::has('login'))
                             @auth
                                 <a href="{{ url('/dashboard') }}" class="hidden sm:inline-block text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-emerald-custom transition-colors">
