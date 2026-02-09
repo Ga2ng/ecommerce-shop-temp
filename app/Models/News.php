@@ -54,4 +54,20 @@ class News extends Model
     {
         return $query->where('is_published', true);
     }
+
+    /**
+     * Get the route key for the model (slug).
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
+    /**
+     * Excerpt untuk preview (tanpa HTML).
+     */
+    public function getExcerptAttribute(): string
+    {
+        return \Illuminate\Support\Str::limit(strip_tags($this->content), 160);
+    }
 }

@@ -88,75 +88,37 @@
                     </p>
                 </div>
 
-                <!-- Product Grid -->
+                <!-- Product Grid (data dari model Product) -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    <!-- Product Card 1 -->
-                    <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden hover:shadow-lg transition-shadow group">
-                        <div class="aspect-square bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                            <div class="w-24 h-24 bg-emerald-custom opacity-20 rounded-full group-hover:opacity-30 transition-opacity"></div>
-                        </div>
-                        <div class="p-4">
-                            <h3 class="font-semibold text-black dark:text-white mb-2">Produk Merchandise 1</h3>
-                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">Deskripsi produk merchandise berkualitas tinggi</p>
-                            <div class="flex items-center justify-between">
-                                <span class="text-lg font-bold text-emerald-custom">Rp 99.000</span>
-                                <button class="px-4 py-2 bg-black dark:bg-emerald-custom text-white text-sm rounded-md hover:bg-gray-900 dark:hover:bg-[#0ea572] transition-colors">
-                                    Detail
-                                </button>
+                    @forelse($products as $product)
+                        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden hover:shadow-lg transition-shadow group">
+                            <a href="{{ route('catalog.show', $product->slug) }}" class="block aspect-square bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                                @if($product->image)
+                                    <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                @else
+                                    <div class="w-full h-full flex items-center justify-center">
+                                        <div class="w-24 h-24 bg-emerald-custom/20 rounded-full group-hover:opacity-30 transition-opacity"></div>
+                                    </div>
+                                @endif
+                            </a>
+                            <div class="p-4">
+                                <h3 class="font-semibold text-black dark:text-white mb-2 line-clamp-2">
+                                    <a href="{{ route('catalog.show', $product->slug) }}" class="hover:text-emerald-custom transition-colors">{{ $product->name }}</a>
+                                </h3>
+                                <p class="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">{{ Str::limit($product->description, 80) }}</p>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-lg font-bold text-emerald-custom">Rp {{ number_format($product->price, 0, ',', '.') }}</span>
+                                    <a href="{{ route('catalog.show', $product->slug) }}" class="px-4 py-2 bg-black dark:bg-emerald-custom text-white text-sm rounded-md hover:bg-gray-900 dark:hover:bg-[#0ea572] transition-colors">
+                                        Detail
+                                    </a>
+                                </div>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Product Card 2 -->
-                    <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden hover:shadow-lg transition-shadow group">
-                        <div class="aspect-square bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                            <div class="w-24 h-24 bg-emerald-custom opacity-20 rounded-full group-hover:opacity-30 transition-opacity"></div>
+                    @empty
+                        <div class="col-span-full text-center py-12 text-gray-500 dark:text-gray-400">
+                            <p>Belum ada produk. Silakan cek katalog nanti.</p>
                         </div>
-                        <div class="p-4">
-                            <h3 class="font-semibold text-black dark:text-white mb-2">Produk Merchandise 2</h3>
-                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">Deskripsi produk merchandise berkualitas tinggi</p>
-                            <div class="flex items-center justify-between">
-                                <span class="text-lg font-bold text-emerald-custom">Rp 149.000</span>
-                                <button class="px-4 py-2 bg-black dark:bg-emerald-custom text-white text-sm rounded-md hover:bg-gray-900 dark:hover:bg-[#0ea572] transition-colors">
-                                    Detail
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Product Card 3 -->
-                    <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden hover:shadow-lg transition-shadow group">
-                        <div class="aspect-square bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                            <div class="w-24 h-24 bg-emerald-custom opacity-20 rounded-full group-hover:opacity-30 transition-opacity"></div>
-                        </div>
-                        <div class="p-4">
-                            <h3 class="font-semibold text-black dark:text-white mb-2">Produk Merchandise 3</h3>
-                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">Deskripsi produk merchandise berkualitas tinggi</p>
-                            <div class="flex items-center justify-between">
-                                <span class="text-lg font-bold text-emerald-custom">Rp 199.000</span>
-                                <button class="px-4 py-2 bg-black dark:bg-emerald-custom text-white text-sm rounded-md hover:bg-gray-900 dark:hover:bg-[#0ea572] transition-colors">
-                                    Detail
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Product Card 4 -->
-                    <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden hover:shadow-lg transition-shadow group">
-                        <div class="aspect-square bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                            <div class="w-24 h-24 bg-emerald-custom opacity-20 rounded-full group-hover:opacity-30 transition-opacity"></div>
-                        </div>
-                        <div class="p-4">
-                            <h3 class="font-semibold text-black dark:text-white mb-2">Produk Merchandise 4</h3>
-                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">Deskripsi produk merchandise berkualitas tinggi</p>
-                            <div class="flex items-center justify-between">
-                                <span class="text-lg font-bold text-emerald-custom">Rp 249.000</span>
-                                <button class="px-4 py-2 bg-black dark:bg-emerald-custom text-white text-sm rounded-md hover:bg-gray-900 dark:hover:bg-[#0ea572] transition-colors">
-                                    Detail
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                    @endforelse
                 </div>
 
                 <div class="text-center mt-12">
@@ -179,74 +141,49 @@
                     </p>
                 </div>
 
-                <!-- News Grid -->
+                <!-- News Grid (data dari model News) -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <!-- News Card 1 -->
-                    <article class="bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
-                        <div class="h-48 bg-gradient-to-br from-emerald-custom to-[#0ea572] flex items-center justify-center">
-                            <span class="text-white text-4xl font-bold opacity-50">News</span>
-                        </div>
-                        <div class="p-6">
-                            <div class="text-sm text-emerald-custom mb-2">15 Januari 2024</div>
-                            <h3 class="text-xl font-semibold text-black dark:text-white mb-3">
-                                Tips Memilih Merchandise Berkualitas untuk UMKM
-                            </h3>
-                            <p class="text-gray-600 dark:text-gray-400 mb-4">
-                                Pelajari cara memilih produk merchandise yang tepat untuk meningkatkan brand awareness bisnis Anda...
-                            </p>
-                            <a href="#" class="text-emerald-custom font-medium hover:underline inline-flex items-center">
-                                Baca Selengkapnya
-                                <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                                    </svg>
-                                </a>
-                        </div>
-                    </article>
-
-                    <!-- News Card 2 -->
-                    <article class="bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
-                        <div class="h-48 bg-gradient-to-br from-gray-900 to-black flex items-center justify-center">
-                            <span class="text-white text-4xl font-bold opacity-50">News</span>
-                        </div>
-                        <div class="p-6">
-                            <div class="text-sm text-emerald-custom mb-2">10 Januari 2024</div>
-                            <h3 class="text-xl font-semibold text-black dark:text-white mb-3">
-                                Promo Spesial Bulan Ini
-                            </h3>
-                            <p class="text-gray-600 dark:text-gray-400 mb-4">
-                                Dapatkan diskon hingga 30% untuk pembelian merchandise dalam jumlah besar. Promo terbatas!
-                            </p>
-                            <a href="#" class="text-emerald-custom font-medium hover:underline inline-flex items-center">
-                                Baca Selengkapnya
-                                <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                                    </svg>
-                                </a>
-                        </div>
-                    </article>
-
-                    <!-- News Card 3 -->
-                    <article class="bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
-                        <div class="h-48 bg-gradient-to-br from-emerald-custom to-[#0ea572] flex items-center justify-center">
-                            <span class="text-white text-4xl font-bold opacity-50">News</span>
-                        </div>
-                        <div class="p-6">
-                            <div class="text-sm text-emerald-custom mb-2">5 Januari 2024</div>
-                            <h3 class="text-xl font-semibold text-black dark:text-white mb-3">
-                                Koleksi Baru: Merchandise Ramah Lingkungan
-                            </h3>
-                            <p class="text-gray-600 dark:text-gray-400 mb-4">
-                                Kini hadir produk merchandise ramah lingkungan untuk mendukung bisnis yang lebih sustainable...
-                            </p>
-                            <a href="#" class="text-emerald-custom font-medium hover:underline inline-flex items-center">
-                                Baca Selengkapnya
-                                <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                                </svg>
+                    @forelse($news as $item)
+                        <article class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
+                            <a href="{{ route('news.show', $item->slug) }}" class="block h-48 overflow-hidden bg-gray-100 dark:bg-gray-800">
+                                @if($item->image)
+                                    <img src="{{ asset('storage/' . $item->image) }}" alt="{{ $item->title }}" class="w-full h-full object-cover hover:scale-105 transition-transform duration-300">
+                                @else
+                                    <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-emerald-custom/20 to-emerald-custom/10">
+                                        <span class="text-emerald-custom/40 text-3xl font-bold">News</span>
+                                    </div>
+                                @endif
                             </a>
+                            <div class="p-6">
+                                <time class="text-sm text-emerald-custom mb-2 block" datetime="{{ $item->published_at?->toIso8601String() }}">
+                                    {{ $item->published_at?->translatedFormat('d F Y') }}
+                                </time>
+                                <h3 class="text-xl font-semibold text-black dark:text-white mb-3 line-clamp-2">
+                                    <a href="{{ route('news.show', $item->slug) }}" class="hover:text-emerald-custom transition-colors">{{ $item->title }}</a>
+                                </h3>
+                                <p class="text-gray-600 dark:text-gray-400 mb-4 line-clamp-3">{{ $item->excerpt }}</p>
+                                <a href="{{ route('news.show', $item->slug) }}" class="text-emerald-custom font-medium hover:underline inline-flex items-center">
+                                    Baca Selengkapnya
+                                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </a>
+                            </div>
+                        </article>
+                    @empty
+                        <div class="col-span-full text-center py-12 text-gray-500 dark:text-gray-400">
+                            <p>Belum ada berita. Silakan cek kembali nanti.</p>
                         </div>
-                    </article>
+                    @endforelse
                 </div>
+
+                @if($news->isNotEmpty())
+                    <div class="text-center mt-10">
+                        <a href="{{ route('news.index') }}" class="inline-block px-6 py-2.5 border-2 border-emerald-custom text-emerald-custom font-semibold rounded-lg hover:bg-emerald-custom hover:text-white transition-colors">
+                            Semua Berita
+                        </a>
+                    </div>
+                @endif
             </div>
         </section>
 
@@ -264,7 +201,7 @@
                         <h4 class="font-semibold mb-4">Tautan Cepat</h4>
                         <ul class="space-y-2 text-gray-400">
                             <li><a href="#catalog" class="hover:text-emerald-custom transition-colors">Katalog</a></li>
-                            <li><a href="#news" class="hover:text-emerald-custom transition-colors">Berita</a></li>
+                            <li><a href="{{ route('news.index') }}" class="hover:text-emerald-custom transition-colors">Berita</a></li>
                             <li><a href="#" class="hover:text-emerald-custom transition-colors">Tentang Kami</a></li>
                             <li><a href="#" class="hover:text-emerald-custom transition-colors">Kontak</a></li>
                         </ul>

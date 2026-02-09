@@ -33,7 +33,7 @@
                     <div class="hidden lg:flex items-center space-x-6">
                         <a href="/" class="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-emerald-custom transition-colors">Home</a>
                         <a href="{{ route('catalog.index') }}" class="text-sm font-medium text-black dark:text-white border-b-2 border-emerald-custom">Catalog</a>
-                        <a href="/#news" class="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-emerald-custom transition-colors">News</a>
+                        <a href="{{ route('news.index') }}" class="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-emerald-custom transition-colors {{ request()->routeIs('news.*') ? 'text-black dark:text-white border-b-2 border-emerald-custom' : '' }}">News</a>
                     </div>
 
                     <!-- User Menu & Mobile Toggle -->
@@ -65,77 +65,16 @@
             </div>
         </nav>
 
-        <!-- Filter Bar (Sticky below nav) -->
+        @hasSection('catalog_filters')
+        <!-- Filter Bar (Sticky below nav) - hanya di halaman catalog -->
         <div class="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-16 z-40 shadow-sm">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div id="mobile-menu" class="hidden lg:block py-4">
-                    <form method="GET" action="{{ route('catalog.index') }}" class="flex flex-wrap items-center gap-3">
-                        <!-- Search Input -->
-                        <div class="relative flex-1 min-w-[200px]">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                                </svg>
-                            </div>
-                            <input 
-                                type="text" 
-                                name="search" 
-                                value="{{ request('search') }}"
-                                placeholder="Search products..." 
-                                class="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-custom focus:border-transparent transition-all"
-                            >
-                        </div>
-
-                        <!-- Category Filter -->
-                        <select 
-                            name="category" 
-                            onchange="this.form.submit()"
-                            class="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-custom focus:border-transparent transition-all cursor-pointer"
-                        >
-                            <option value="">All Categories</option>
-                            @if(isset($categories))
-                                @foreach($categories as $category)
-                                    <option value="{{ $category }}" {{ request('category') == $category ? 'selected' : '' }}>
-                                        {{ $category }}
-                                    </option>
-                                @endforeach
-                            @endif
-                        </select>
-
-                        <!-- Sort By -->
-                        <select 
-                            name="sort_by" 
-                            onchange="this.form.submit()"
-                            class="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-custom focus:border-transparent transition-all cursor-pointer"
-                        >
-                            <option value="created_at" {{ request('sort_by') == 'created_at' ? 'selected' : '' }}>Newest</option>
-                            <option value="name" {{ request('sort_by') == 'name' ? 'selected' : '' }}>Name</option>
-                            <option value="price" {{ request('sort_by') == 'price' ? 'selected' : '' }}>Price</option>
-                        </select>
-
-                        <!-- Sort Order -->
-                        <select 
-                            name="sort_order" 
-                            onchange="this.form.submit()"
-                            class="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-custom focus:border-transparent transition-all cursor-pointer"
-                        >
-                            <option value="asc" {{ request('sort_order') == 'asc' ? 'selected' : '' }}>Asc</option>
-                            <option value="desc" {{ request('sort_order') == 'desc' ? 'selected' : '' }}>Desc</option>
-                        </select>
-
-                        <!-- Clear Filters Button -->
-                        @if(request()->hasAny(['search', 'category', 'min_price', 'max_price', 'sort_by', 'sort_order']))
-                            <a href="{{ route('catalog.index') }}" class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-emerald-custom transition-colors flex items-center gap-1">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                </svg>
-                                Clear
-                            </a>
-                        @endif
-                    </form>
+                    @yield('catalog_filters')
                 </div>
             </div>
         </div>
+        @endif
 
         <!-- Main Content -->
         <main>
@@ -161,7 +100,7 @@
                         <h4 class="font-semibold mb-4 text-sm uppercase tracking-wider">Quick Links</h4>
                         <ul class="space-y-2 text-sm text-gray-400">
                             <li><a href="{{ route('catalog.index') }}" class="hover:text-emerald-custom transition-colors">Catalog</a></li>
-                            <li><a href="/#news" class="hover:text-emerald-custom transition-colors">News</a></li>
+                            <li><a href="{{ route('news.index') }}" class="hover:text-emerald-custom transition-colors">News</a></li>
                             <li><a href="#" class="hover:text-emerald-custom transition-colors">About</a></li>
                             <li><a href="#" class="hover:text-emerald-custom transition-colors">Contact</a></li>
                         </ul>
